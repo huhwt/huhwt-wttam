@@ -1,0 +1,119 @@
+<?php
+
+use Fisharebest\Webtrees\DebugBar;
+use Fisharebest\Webtrees\FlashMessages;
+use Fisharebest\Webtrees\Http\RequestHandlers\Logout;
+use Fisharebest\Webtrees\Http\RequestHandlers\HomePage;
+use Fisharebest\Webtrees\Http\RequestHandlers\SelectLanguage;
+use Fisharebest\Webtrees\I18N;
+use Fisharebest\Webtrees\Module\CustomCssJsModule;
+use Fisharebest\Webtrees\Module\ModuleCustomInterface;
+use Fisharebest\Webtrees\Module\ModuleGlobalInterface;
+use Fisharebest\Webtrees\Services\ModuleService;
+use Fisharebest\Webtrees\View;
+use Fisharebest\Webtrees\Webtrees;
+
+/** @var string $title */
+/** @var string $content */
+/** @var string $modRoot */               // EW.H - MOD ... Root of this Mod
+
+?>
+
+<!DOCTYPE html>
+<html dir="<?= I18N::locale()->direction() ?>" lang="<?= I18N::locale()->languageTag() ?>">
+    <head>
+        <meta charset="utf-8">
+        <meta name="csrf" content="<?= e(csrf_token()) ?>">
+        <meta name="robots" content="<?= e($meta_robots ?? 'noindex') ?>">
+        <meta name="generator" content="<?= e(Webtrees::NAME) ?> <?= e(Webtrees::VERSION) ?>">
+        <meta name="description" content="<?= $meta_description ?? '' ?>">
+
+        <title>
+            <?= strip_tags($title) ?>
+            <?php if ($tree !== null && $tree->getPreference('META_TITLE') !== '') : ?>
+                – <?= e($tree->getPreference('META_TITLE')) ?>
+            <?php endif ?>
+        </title>
+
+
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="src/js/i18n.js"></script>
+        <link rel="stylesheet" type="text/css" href="src/css/tamv6.css">
+    </head>
+
+    <body>
+        <div id="menubar" class="dialbar">
+        </div>
+        <!-------------------------------------------------------------------------------------->
+        <div id="canvas">
+            <svg id="sTAM" xmlns="http://www.w3.org/2000/svg" viewBox="-5000 -3000 6000 6000" preserveAspectRatio="xMinYMin meet" display="none">
+                <defs>
+                    <marker id="arrowTAM" viewBox="0 0 8 8" refX="6" refY="4"
+                        markerWidth="6" markerHeight="6"
+                        orient="auto-start-reverse"
+                        fill="black"
+                        fill-opacity="1">
+                    <path d="M 0 0 L 8 4 L 0 8 z" />
+                    </marker>
+                    <filter id="dropshadowTAM" x="-60%" y="-60%" height="300%" width="300%">
+                        <feOffset result="offOut" in="SourceAlpha" dx="4" dy="4" />
+                        <feGaussianBlur result="blurOut" in="offOut" stdDeviation="5" />
+                        <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+                    </filter>
+                </defs>
+            </svg>
+            <svg id="sTFM" xmlns="http://www.w3.org/2000/svg" viewBox="-5000 -3000 6000 6000" preserveAspectRatio="xMinYMin meet" display="none">
+                <defs>
+                    <marker id="arrowTFM" viewBox="0 0 8 8" refX="6" refY="4"
+                        markerWidth="6" markerHeight="6"
+                        orient="auto-start-reverse"
+                        fill="black"
+                        fill-opacity="1">
+                    <path d="M 0 0 L 8 4 L 0 8 z" />
+                    </marker>
+                    <filter id="dropshadowTFM" x="-60%" y="-60%" height="300%" width="300%">
+                        <feOffset result="offOut" in="SourceAlpha" dx="4" dy="4" />
+                        <feGaussianBlur result="blurOut" in="offOut" stdDeviation="5" />
+                        <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+                    </filter>
+                </defs>
+            </svg>
+            <svg id="bullsEye"></svg>
+        </div>
+
+        <div id="overlay" style="display: none;">
+        </div>
+        <!-------------------------------------------------------------------------------------->
+        <div id="tickcountInfo"  class="dialbar" style="display: none;">
+        </div>
+        <div id="sliderTimeline" class="row" style="display: none;">
+        </div>
+        <!-------------------------------------------------------------------------------------->
+        <script type="module" src="src/js/parms.js"></script>
+        <script type="module" src="src/js/translations.js"></script>
+        <script type="module" src="src/js/gedcom.js"></script>
+        <script type="module" src="src/js/scalarfield.js"></script>
+        <script type="module" src="src/js/interaction.js"></script>
+        <script type="module" src="src/js/TAMrenderer.js"></script>
+        <script type="module" src="src/js/TFMrenderer.js"></script>
+        <script type="module" src="src/js/dbman.js"></script>
+        <script type="module" src="src/js/utils.js"></script>
+        <script type="module" src="src/js/export.js"></script>
+        <script type="module" src="src/js/interfaces.js"></script>
+        <script type="module" src="src/js/guiparts.js"></script>
+        <script type="module" src="src/js/main.js"></script>
+        <script type="module">
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ///  DATA LOADING
+        import { main } from "./src/js/main.js";
+        import * as parms from "./src/js/parms.js";
+        import { testDBstore } from "./src/js/dbman.js";
+
+        parms.SET("DEVMODE", true);
+        testDBstore("wtTAM", ["H-Tree", "TFMdata", "Gedcom"]);
+
+        main("./data","MA.tam");
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        </script>
+    </body>
+</html>

@@ -1,0 +1,86 @@
+.years {
+    font-family: helvetica, arial;
+    position: absolute;
+    top: 0;
+    z-index: 1;
+}
+
+.yearRx {
+    font-size: 60pt;
+    color: #222222;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.5;
+}
+
+#year {
+  font-size: 60pt;
+  color: #000000;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.5;
+}
+
+.yearSlider {
+    z-index: 10;
+}
+
+.yearRange {
+    z-index: 9;
+}
+  
+
+#sliderTimeline {
+    position: absolute;
+    left: 340px;
+    height: 40px;
+    width: 100%;
+    display: flex;
+    margin-left: 100px;
+    flex-direction: row;
+    justify-content: flex-start;
+    z-index: 5;
+}
+
+.sliderTimelineB {
+    width: 80px;
+    justify-content: space-between;
+}
+#sliderTimeline .row {
+    margin-left: 0px;
+    margin-right: 0px;
+}
+.slideButton {
+    position: relative;
+    top: 7px;
+    width: 20px;
+    height: 36px;
+    text-align: center;
+    padding: 0;
+}
+.slideButton-lg {
+    position: relative;
+    top: 7px;
+    width: 36px;
+    height: 36px;
+    text-align: center;
+    padding: 0;
+}
+.slideButton-sm {
+    position: relative;
+    top: 7px;
+    width: 20px;
+    height: 24px;
+    text-align: center;
+    padding: 0;
+    font-weight: 900;
+}
+
+
+.slideButton-sm:hover,
+.slideButton-lg:hover,
+.slideButton:hover {
+    background-color: #1374c4;
+}
