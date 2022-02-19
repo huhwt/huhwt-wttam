@@ -214,6 +214,7 @@ export function MENUBAR_html() {
 				<td class="paramlabel">
 					<input class="button" type="button" style="border:1px solid gray" value="de" id="btn_l_de" />
 					<input class="button" type="button" style="border:1px solid gray" value="en" id="btn_l_en" />
+					<input class="button" type="button" style="border:1px solid gray" value="nl" id="btn_l_nl" />
 				</td>
 			</tr>
 		</table>

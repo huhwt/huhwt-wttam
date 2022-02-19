@@ -701,6 +701,9 @@ function setMenubarInteractions()
     d3.select("#btn_l_en").on("click", function (e) {
         Wswitch_locale('en');
     });
+    d3.select("#btn_l_nl").on("click", function (e) {
+        Wswitch_locale('nl');
+    });
 
     d3.select("#settings_linkdist").on("input", function() {
         parms.SET("LINK_DISTANCE", parseInt(this.value));
