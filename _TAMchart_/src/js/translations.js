@@ -313,6 +313,9 @@ export function switch_locale(_locale) {
         case 'de':
             _text = text_de;
             break;
+        case 'nl':
+            _text = text_nl;
+            break;
         default:
             _text = text_en;
     }
