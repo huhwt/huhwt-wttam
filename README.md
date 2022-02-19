@@ -58,6 +58,8 @@ Updated translations will be distributed with the next release of the module.
 
 So far there is only English and German.
 
+Special thanks to TheDutchJewel for the translation into Dutch.
+
 <a name="support"></a>
 ## support
 
