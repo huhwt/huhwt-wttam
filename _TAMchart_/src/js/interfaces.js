@@ -538,7 +538,7 @@ export function openNewTab(pageName) {
     let _baseUrl = getBaseREF();
     let _isDev = parms.GET("DEVMODE");
     let _pName = pageName;
-    if ( _isDev ) { _pName += '-Dev'; }
+    if ( _isDev ) { _pName += '-dev'; }
     _pName += ".html";
     let _Url = _baseUrl + "/" + _pName;
     window.open(_Url, "_blank");
