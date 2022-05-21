@@ -62,7 +62,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '1.0.0';
+        return '2.1.1.0';
     }
 
     /**
@@ -225,8 +225,10 @@ class TAMaction extends AbstractModule
         $jsImp[] = $this->assetUrl('js/TAMaction.js');
 
         // TODO : 'module' is hardcoded - how to get the name from foreign PHP-class 'ClippingsCartModuleEnhanced20'?
+        $module_cce = '_huhwt-cce_';
+
         return $this->viewResponse($this->name() . '::' . 'TAMaction', [
-            'module_cce'     => '_huhwt-cce20_',
+            'module_cce'     => $module_cce,
             'actKey'         => $actKey,
             'title'          => $title,
             'label'          => $label,
