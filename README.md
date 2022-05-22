@@ -1,6 +1,6 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
-![webtrees major version](https://img.shields.io/badge/webtrees-v2.0.x-green)
+![webtrees major version](https://img.shields.io/badge/webtrees-v2.1-green)
 ![Latest Release](https://img.shields.io/github/v/release/huhwt/huhwt-wttam)
 
 This [webtrees](https://www.webtrees.net/) module hosts TAM -Topographic Attribute Maps-, a node-link diagram overlaid with temporal information.
@@ -33,7 +33,7 @@ The actual TAM functions are encapsulated in their own directory tree and theref
 <a name="requirements"></a>
 ## Requirements
 
-This module requires **webtrees** version 2.0.x, not version 2.1.x.
+This module requires **webtrees** version 2.1.x.
 This module has the same general requirements as named for **Webtrees** overall [webtrees#system-requirements](https://github.com/fisharebest/webtrees#system-requirements).
 
 <a name="installation"></a>
