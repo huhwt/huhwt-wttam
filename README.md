@@ -31,7 +31,7 @@ The PHP part of this module manages the transfer of data from the web server (st
 The actual TAM functions are encapsulated in their own directory tree and therefore have no contact with the PHP components.
 
 <a name="requirements"></a>
-## Requirements
+## Requirements 
 
 This module requires **webtrees** version 2.1.x.
 This module has the same general requirements as named for **Webtrees** overall [webtrees#system-requirements](https://github.com/fisharebest/webtrees#system-requirements).
