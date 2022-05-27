@@ -117,7 +117,7 @@ export function setParameters(params)
 
         let _key = key;
         if (_key.startsWith('PARAM_', 0)) {
-            _key = _key.slice(5);
+            _key = _key.slice(6);
         }
         if (parms.TEST(_key)) {
             switch (_key)
