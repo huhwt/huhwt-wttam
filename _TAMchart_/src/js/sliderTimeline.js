@@ -44,6 +44,7 @@ export class TIMELINE
         this.YearS = parms.GET("RANGE_MIN");
         this.YearE = parms.GET("RANGE_MAX");
         this.Year = this.YearS;
+        this.YearSo = this.YearS;
         this.YearIncrement = 0;
 
         let yCount = this.YearE - this.YearS + 1;
@@ -132,10 +133,10 @@ export class TIMELINE
     }
 
     initSlider() {
-        d3.select('#yearSlider').on('change', function() {
-            position = d3.select("#yearSlider").val();
-            this.Year = Math.round(((config.endYear - config.startYear) * (position/100)) + config.startYear);
-        });
+        // d3.select('#yearSlider').on('change', function() {
+        //     position = d3.select("#yearSlider").val();
+        //     this.Year = Math.round(((config.endYear - config.startYear) * (position/100)) + config.startYear);
+        // });
         d3.select('#slideButtonF').on('click', function() {
             togglePlayer(1);
         });
@@ -154,8 +155,8 @@ export class TIMELINE
     }
 
     togglePlayer(yearIncrement) {
-        let sYearIncrement = YearIncrement;
-        switch ( YearIncrement ) {
+        let sYearIncrement = yearIncrement;
+        switch ( yearIncrement ) {
             case -1:
                 if (year <= this.YearS) {
                     sYearIncrement = 0;
@@ -199,6 +200,10 @@ export class TIMELINE
             sSYear.silentValue(this.Year);
             forceRefresh = true;
         }
+        if ( this.YearS != this.YearSo ) {
+            this.YearSo = this.YearS;
+            forceRefresh = true;
+        }
         // d3.select('#yearRS').html( this.YearS)
         //     .css('left', width/2 - 400 + margin.left)
         //     .css('top', height - 120);
@@ -223,7 +228,7 @@ export class TIMELINE
         }
     }
 
-     setYearIncrement(value) {
+    setYearIncrement(value) {
         this.YearIncrement = value;
         forceRefresh = true;
         console.log('setYearIncrement');

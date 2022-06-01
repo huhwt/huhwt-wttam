@@ -85,7 +85,7 @@ export function loadTFM(TFM_data, callback)
     };
     let lines = TFM_data.split("\n");
 
-    gedcom = build_gedcam(lines);
+    gedcom = build_gedcom(lines);
         
     // ("Loaded " + gedcom.persons.size + " persons in " + gedcom.families.size + " families");
     console.log(i18n("L_Xp_Xf", { nP: gedcom.persons.size, nF: gedcom.families.size } ));
@@ -111,7 +111,7 @@ export function processGedcom(text, callback)
 
     let lines = text.split("\n");
 
-    gedcom = build_gedcam(lines);
+    gedcom = build_gedcom(lines);
         
     // ("Loaded " + gedcom.persons.size + " persons in " + gedcom.families.size + " families");
     console.log(i18n("L_Xp_Xf", { nP: gedcom.persons.size, nF: gedcom.families.size } ));
@@ -119,7 +119,7 @@ export function processGedcom(text, callback)
 }
 
 
-function build_gedcam(lines)
+function build_gedcom(lines)
 {
     var gedcom = {
         "persons" : new Map(),

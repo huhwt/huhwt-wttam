@@ -390,7 +390,7 @@ function toggleShowTickcount()
 /////////////////////////////////////////////////////////////////////////////
 // This does *not* trigger any updates of the TAM,
 // only the parameter menu is updated.
-export function setDefaultParameters()
+export function set_tamDefaultParameters()
 {
     const isTFMRenderer = parms.oGET("RENDERER") instanceof TFMRenderer;
     // ("Loading default parameters for",

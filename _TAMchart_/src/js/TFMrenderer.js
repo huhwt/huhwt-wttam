@@ -18,7 +18,7 @@ import { TAMRenderer, setRange } from "./TAMrenderer.js";
 // import { default as i18n } from "./i18n.js";
 import { vec, distance, isNumber, cleanDOM } from "./utils.js";
 import { resetSVGLayers } from "./interfaces.js";
-import { initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js";
+import { initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js"; 
 import * as parms from "./parms.js";
 import { TopoMap, NormalField, GradientField } from "./scalarfield.js";
 import { timestamp } from './utils.js';

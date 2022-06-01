@@ -16,7 +16,7 @@ import { TAHRenderer } from "./TAHrenderer.js";
 import { loadGedcom, estimateMissingDates, processGedcom } from "./gedcom.js";
 // import { default as i18n } from "./i18n.js";
 import * as parms from "./parms.js";
-import { toggleSVG, setDefaultParameters } from "./interaction.js";
+import { toggleSVG, set_tamDefaultParameters } from "./interaction.js";
 import { getDB, readFromDB } from "./dbman.js";
 import { getBaseURL, getBaseREF } from "./utils.js";
 
@@ -70,6 +70,10 @@ function readSingleFile(e)
     }
 
     let folder = parms.GET("SOURCE_FOLDER");
+    if (folder == null) {
+        folder = "data";
+        parms.SET("SOURCE_FOLDER", folder);
+    }
     reader.onload = function (e, reader) {
         var url = e.target.result;
         parms.SET("FILENAME", file.name);
@@ -113,7 +117,7 @@ function readSingleFile(e)
                 toggleSVG(renderer);
                 resetTFM(objRef);
             }
-            setDefaultParameters();
+            set_tamDefaultParameters();
             parms.SET("SOURCE_FILE", file.name);
 
             loadGedcom(folder + "/" + file.name,
@@ -231,7 +235,7 @@ export function loadFileFromDisk(folder)
             parms.oSET("RENDERER", renderer);
         }
 
-        setDefaultParameters();
+        set_tamDefaultParameters();
         loadGedcom(folder + "/" + _fileName,
             function(gedcom, text) {
                 let _states = parms.GETall();
@@ -377,7 +381,7 @@ function processJSON(json, filename)
     }
     else {
         console.log(i18n("F_dnc_p"));                   // File does not contain parameters
-        setDefaultParameters();
+        set_tamDefaultParameters();
     }
     parms.SET("SOURCE_FILE", filename);
     let renderer = parms.oGET("RENDERER");
@@ -392,7 +396,7 @@ function processIDBH(dataset)
     }
     else {
         console.log(i18n("F_dnc_p"));                   // File does not contain parameters
-        setDefaultParameters();
+        set_tamDefaultParameters();
     }
     let renderer = parms.oGET("RENDERER");
     renderer.createPersonForceGraph(dataset);
@@ -406,7 +410,7 @@ function processIDBtfm(dataset)
     }
     else {
         console.log(i18n("F_dnc_p"));                   // File does not contain parameters
-        setDefaultParameters();
+        set_tamDefaultParameters();
     }
     let gedcom = dataset.nodeData;
     processGedcom(gedcom, function(gedcom, text) {
@@ -428,7 +432,7 @@ function processIDBgedcom(dataset)
     }
     else {
         console.log(i18n("F_dnc_p"));                   // File does not contain parameters
-        setDefaultParameters();
+        set_tamDefaultParameters();
     }
     let gedcom = dataset.nodeData;
     processGedcom(gedcom, function(gedcom, text) {
@@ -453,26 +457,43 @@ function processTFM(json, folder)
     }
     else {
         console.log(i18n("F_dnc_p"));                   // File does not contain parameters
-        setDefaultParameters();
+        set_tamDefaultParameters();
     }
     let _sourceFile = parms.GET("SOURCE_FILE"); // parms.SOURCE_FILE is set by setParameters()
     let _sourcePath = folder + "/" + _sourceFile; // parms.SOURCE_FILE is set by setParameters()
 
-    // then load the data file .ged
-    loadGedcom(_sourcePath, function (gedcom, text) {
-        estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
+    if("nodeData" in json) {
+        processGedcom(json.nodeData, function (gedcom, text) {
+            estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
 
-        let renderer = parms.oGET("RENDERER");
-        // use node positions from .tfm (if available)
-        renderer.load_GRAPH_DATA(text);
-        if ("nodePositions" in json) {
-            renderer.createFamilyForceGraph(gedcom, json.nodePositions);
-        } else {
-            renderer.createFamilyForceGraph(gedcom);
-        }
-        renderer.tickCounterTotal = 0;
-        renderer.tickCounterCycles = 5;
-    });
+            let renderer = parms.oGET("RENDERER");
+            // use node positions from .tfm (if available)
+            renderer.load_GRAPH_DATA(text);
+            if ("nodePositions" in json) {
+                renderer.createFamilyForceGraph(gedcom, json.nodePositions);
+            } else {
+                renderer.createFamilyForceGraph(gedcom);
+            }
+            renderer.tickCounterTotal = 0;
+            renderer.tickCounterCycles = 5;
+        });
+    } else {
+    // then load the data file .ged
+        loadGedcom(_sourcePath, function (gedcom, text) {
+            estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
+
+            let renderer = parms.oGET("RENDERER");
+            // use node positions from .tfm (if available)
+            renderer.load_GRAPH_DATA(text);
+            if ("nodePositions" in json) {
+                renderer.createFamilyForceGraph(gedcom, json.nodePositions);
+            } else {
+                renderer.createFamilyForceGraph(gedcom);
+            }
+            renderer.tickCounterTotal = 0;
+            renderer.tickCounterCycles = 5;
+        });
+    }
 }
 
 function checkFileExistence(url)
