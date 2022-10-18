@@ -15,6 +15,30 @@ function putDB(dbName, storeName, data) {
     let idb = writeToDB(dbName, storeName, data);
     return idb;
 }
+function getDB(dbName, storeName, key) {
+    const dbaction = readFromDB(dbName, storeName, key);
+    dbaction.then( value => { return value; } )
+            .catch(err => { console.log(err); } )
+            ;
+}
+
+function readFromDB(dname, sname, key) {
+    return new Promise(function(resolve) {
+        var DBOpenRequest = indexedDB.open(dname);
+        DBOpenRequest.onsuccess = function(e) {
+            var idb = DBOpenRequest.result;
+            let tactn = idb.transaction(sname, "readonly");
+            let store = tactn.objectStore(sname);
+            let data = store.get(key);
+            data.onsuccess = function() {
+                resolve(data.result);
+            };
+            tactn.oncomplete = function() {
+                idb.close();
+            };
+        };
+    });
+}
 
 function writeToDB(dname, sname, arr) {
     return new Promise(function(resolve) {
@@ -122,19 +146,19 @@ function showSnames(DBname, sname) {
     });
 }
 
-function loadFromServer(TAMkey) {
-    this.ajaxGedcom = document.getElementById('get_gedcom').dataset.urlTAMchart;
-    jQuery.ajax({
-        url: tv.ajaxGedcom,
-        dataType: 'text',
-        data: 'q=' + TAMkey,
-        success: function (ret) {
-            putDB('wtTAM', 'gedcom', ret);
-        },
-        complete: function () {
-        },
-        timeout: function () {
-        }
-      });
+// function loadFromServer(TAMkey) {
+//     this.ajaxGedcom = document.getElementById('get_gedcom').dataset.urlTAMchart;
+//     jQuery.ajax({
+//         url: tv.ajaxGedcom,
+//         dataType: 'text',
+//         data: 'q=' + TAMkey,
+//         success: function (ret) {
+//             putDB('wtTAM', 'gedcom', ret);
+//         },
+//         complete: function () {
+//         },
+//         timeout: function () {
+//         }
+//       });
 
-}
+// }

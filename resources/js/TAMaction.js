@@ -3,22 +3,12 @@ function doAJAX(TAMkey, btnID, getID, doneID, TAMpath, textCompleted, nextText) 
     //     e.preventDefault();
     // });
     $(function() {
-        jQuery.fn.extend({
-            disable: function(state) {
-                return this.each(function() {
-                    var $this = $(this);
-                    if($this.is('input, button'))
-                        this.disabled = state;
-                    else
-                        $this.toggleClass('cce_disabled', state);
-                });
-            }
-        });
-        
-        $('a').disable(true);
-        
         $('body').on('click', 'a.cce_disabled', function(event) {
             event.preventDefault();
+        });
+
+        $('#btn_DSname').on('click', function(event) {
+            setOwnIdent();
         });
     });    
     var hrefID = document.getElementById(btnID);
@@ -31,27 +21,52 @@ function doAJAX(TAMkey, btnID, getID, doneID, TAMpath, textCompleted, nextText) 
         dataType: 'text',
         data: 'q=' + TAMkey,
         success: function (ret) {
-            let ged = JSON.parse(ret);
-            let ged0 = ged.gedcom;
+            let response = JSON.parse(ret);
+            let gedcom = response.gedcom;
+            let dsname = response.dsname;
             let dataset = {
-              "thedata":  [{
-                "storeID": "gedcom",
-                "nodeData": ged0
+              "gedData":  [{
+                "storeID": "download",
+                "nodeData": gedcom,
+                "dsname": dsname
             }]
             };
-            putDB('wtTAM', 'Gedcom', dataset.thedata);
-            localStorage.setItem("actGedcom", "gedcom");
+            putDB('wtTAM', 'Gedcom', dataset.gedData);
+            localStorage.setItem("loadTAM", "download");
             doneGedcom.innerText = textCompleted;
             hrefID.setAttribute("href", TAMpath);
             hrefID.setAttribute("target", "_blank");
             hrefID.innerHTML = nextText;
-            // $('.cce_disabled').click = null;
-            $('a').disable(false);
-            // hrefID.classList.toggle("xyz_disabled");
+            hrefID.classList.toggle("cce_disabled");
         },
         complete: function () {
         },
         timeout: function () {
         }
       });
+}
+
+function setOwnIdent() {
+    var ownDSname = document.getElementById('vizDSname');
+    if (ownDSname.value == '') { return; }
+    const dbaction = readFromDB('wtTAM', 'Gedcom', 'download');
+    dbaction.then( value => { 
+                    console.log(value);
+                    setOwnIdentDo(value, ownDSname);
+                 } )
+            .catch(err => { console.log(err); } )
+            ;
+}
+function setOwnIdentDo(dbset, ownDSname) {
+    let odsname = ownDSname.value;
+    let dataset = {
+        "gedData":  [{
+          "storeID": dbset.storeID,
+          "dsname": odsname,
+          "nodeData": dbset.nodeData
+      }]};
+    putDB('wtTAM', 'Gedcom', dataset.gedData);
+    var defDSname = document.getElementById('TAMdname');
+    defDSname.textContent = odsname;
+    ownDSname.value = '';
 }
