@@ -13,6 +13,7 @@ use function Sabre\Uri\split;
  * @var string              $label
  * @var Tree                $tree
  * @var string              $TAMpath
+ * @var string              $TAMdname
  * @var array<>             $urlAJAX
  * @var array<string>       $jsimp
  */
@@ -26,11 +27,31 @@ use function Sabre\Uri\split;
 <h2 class="wt-page-title"><?= $title ?></h2>
 
 <div class="row form-group">
-    <div class="col-sm-3 col-form-label wt-page-options-label">
+    <div class="col-sm-2 col-form-label wt-page-options-label">
         <span id="done_gedcom"><?= $label ?></span>
     </div>
-    <div class="col-sm-9 wt-page-options-value">
+    <div class="col-sm-1 wt-page-options-value" title="<?= I18N::translate('IDB key') ?>" >
         <?= $actKey ?>
+    </div>
+    <div class="col-sm-2 wt-page-options-value" title="<?= I18N::translate('Clippings identifier') ?>">
+        <span id="LINdname"><?= $TAMdname ?></span>
+    </div>
+</div>
+
+<div class="row form-group">
+    <div class="col-sm-3 wt-page-options-label">
+        <span><?= I18N::translate('Optional: Set own identifier'); ?></span>
+    </div>
+    <div class="col-sm-3 wt-page-options-value">
+        <label>
+            <span class="visually-hidden">
+                <?= I18N::translate('Filename') ?>
+            </span>
+            <input type="text" class="form-control" name="title" id="vizDSname" value="" placeholder="<?= I18N::translate('(Own identifier)') ?>">
+        </label>
+    </div>
+    <div class="col-sm-4 wt-page-options-value">
+        <input class="mbutton" type="button" style="border:1px solid gray" value="<?= I18N::translate('Accept'); ?>" id="btn_DSname" />
     </div>
 </div>
 
@@ -46,6 +67,10 @@ use function Sabre\Uri\split;
         </a>
     </div>
 </div>
+
+<?php View::push('styles') ?>
+    <link rel="stylesheet" href="<?= e($stylesheet) ?>">
+<?php View::endpush(); ?>
 
 <?php if (count($jsimp) > 0) {  ?>
     <?php for ( $i = 0, $iE = count($jsimp); $i < $iE; ++$i) : ?>
