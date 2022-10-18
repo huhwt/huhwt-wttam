@@ -149,6 +149,11 @@ u {
     font-weight: bold;
 }
 
+#filename:hover {
+    background: #13d7ae;
+    color: white;
+}
+
 .mcontainer {
     display: flex;
     flex-direction: column; 
@@ -156,15 +161,6 @@ u {
     border: 1px solid #cccccc;
     background-color: #f6f6f6;
 }
-    .mcontainer > div {
-        width: 85%;
-        margin: 5px;
-        padding: 2px 2px 2px 5px;
-        text-align: center;
-        line-height: 18px;
-        border: 2px solid rgb(138, 138, 138);
-        background-color: #f6f6f6;
-    }
     .mcontainer > p {
         width: 86%;
         margin: 5px;
@@ -318,7 +314,8 @@ u {
 
                 .dialbar fieldset legend label.toggler:hover {
                     border: 1px solid #bbb;
-                    background: #f6f6f6;
+                    background: #13d7ae;
+                    color: white;
                 }
 
         .dialbar fieldset table {
@@ -329,6 +326,49 @@ u {
             margin: 15px 0px 5px 0px;
             text-align: center;
         }
+
+.btn-circle {
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    padding: 0px 0;
+    font-size: 18px;
+    line-height: 2.00;
+    display: grid;
+    border-radius: 30px;
+    background: rgba(136, 118, 118, 0.438);
+    color: gray;
+    margin-top: 10px;
+}
+.btn-circle:hover {
+    background: #13d7ae;
+    color: white;
+}
+
+.mc-fbox {
+    width: 85%;
+    margin: 5px;
+    padding: 2px 2px 2px 6px;
+    text-align: center;
+    line-height: 18px;
+    border: 2px solid rgb(138, 138, 138);
+    background-color: #f6f6f6;
+}
+.mc-fbox-2 {
+    padding: 2px 2px 2px 11px;
+}
+
+.mb-fbox-h legend {
+    float: left;
+}
+.mb-fbox-h a {
+    float: right;
+}
+.mb-fbox-h .btn{
+    position: relative;
+    top: -37px;
+    left: 7px;
+}
 
 input.button {
     padding: 1px 4px;

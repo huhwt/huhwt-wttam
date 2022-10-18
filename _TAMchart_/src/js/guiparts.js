@@ -19,20 +19,22 @@ export function MENUBAR_html() {
 		<legend><label class="toggler" for="toggle_os">${i18n("mb_OpSt")}</label></legend>
 		<input class="menu_toggler" type="checkbox" id="toggle_os" hidden="" />
         <div class="mcontainer menu">
-		<legend><label >${i18n("mb_Open")}</label></legend>
-            <div>
+    		<legend><label >${i18n("mb_Open")}</label></legend>
+            <div class="mc-fbox">
                 <input class="mbutton" type="button" style="border:1px solid gray" value="${i18n("mb_lIDB")}" id="btnLoad" />
-                <input type="file" id="browse" name="fileupload" style="display: none" accept=".json, .ged, .tam, .tfm" />
+                <input type="file" id="browse" name="fileupload" style="display: none" accept=".ged, .tam, .tfm" />
                 <input class="mbutton" type="button" style="border:1px solid gray" value="${i18n("mb_lF")}" id="fakeBrowse" />
             </div>
             <p>
-                <input class="filelabel" type="text" id="filename" contentEditable />
+                <input class="filelabel" type="text" id="filename" contentEditable title="Name/Key aktuelle Ansicht" />
             </p>
             <legend><label >${i18n("mb_Store")}</label></legend>
-            <div>
+            <div class="mb-fbox-h">
+                <a id="btnSvgExport" class="btn btn-circle"><span class="fa fa-file" title="${i18n("mb_sSVG")}"></span></a>
+            </div>
+            <div class="mc-fbox mc-fbox-2">
                 <input class="mbutton" type="button" style="border:1px solid gray" value="${i18n("mb_sIDB")}" id="btnSave" />
                 <input class="mbutton" type="button" style="border:1px solid gray" value="${i18n("mb_sF")}" id="btnSaveF" />
-                <input class="mbutton" type="button" style="border:1px solid gray" value="${i18n("mb_sSVG")}" id="btnSvgExport" />
             </div>
         </div>
     </fieldset>
@@ -40,8 +42,8 @@ export function MENUBAR_html() {
 	let html_mb = html_os + `
 	<!-------------------------------------------------------------------------------------->
 	<div class="title">
-		Topographic Attribute Maps
-		<span id="version" class="version">1.19</span>
+		Topographic Attribute Maps - ℍ&ℍwt
+		<span id="version" class="version" title="${i18n('powered by TAM 1.20')}">2.2</span>
 	</div>
 	<fieldset>
 		<legend><label class="toggler" for="toggle_ia">${i18n("mb_ntrct")}</label></legend>
@@ -111,6 +113,10 @@ export function MENUBAR_html() {
 				<tr>
 					<td class="paramlabel">${i18n("mb_SG")}</td>
 					<td class="param"><label class="switch"><input id="settings_show_graph" type="checkbox"><span class="slider"></span></label></td>
+				</tr>
+				<tr>
+					<td class="paramlabel">${i18n("mb_SLL")}</td>
+					<td class="param"><label class="switch"><input id="settings_show_lifelines" type="checkbox"><span class="slider"></span></label></td>
 				</tr>
 				<tr>
 					<td class="paramlabel">${i18n("mb_SL")}</td>

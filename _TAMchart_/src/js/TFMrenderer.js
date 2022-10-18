@@ -1,3 +1,5 @@
+/*jshint -W014 */
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Topographic Attribute Maps Demo
@@ -26,11 +28,18 @@ import { putDB } from "./dbman.js";
 
 // Parameters for Family Graph appearance
 var PARM_RANGE_UNIT_LEN = 3;
-var PARM_NODE_BORDER_COLOR_FIXED = "#ad0de2";
 var PARM_FAMILY_NODE_BORDER_COLOR = "#f88";
 var PARM_FAMILY_NODE_BORDER_WIDTH = 10;
 var PARM_FAMILY_FONT_SIZE = 16;
 var PARM_FAMILY_NODE_OPACITY = 0.7;
+var PARM_NODE_BORDER_COLOR_FIXED = "#ad0de2";
+
+var PARM_LIFELINE_COLOR = "#e00";
+var PARM_LIFELINE_WIDTHfac = 0.6;
+var PARM_LIFELINE_WIDTH = 1;
+var PARM_LIFELINE_OPACITY = 1;
+
+var tfmObj = null;
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,15 +51,19 @@ export class TFMRenderer extends TAMRenderer
     {
         super();
 
+        this.GRAPH = null;
+
         this.PNODES = [];
         this.FNODES = [];
-        this.LINKNODES = [];
+		this.LLNODES = [];
         this.FAMILYLINKS = [];
 
         this.SVG_FAMILY_CIRCLES = null;
         this.SVG_FAMILY_LABELS = null;
+        this.SVG_LIFELINES = null;
 
         this.instance = this;
+        tfmObj = this;
         this.RENDERtype = 1;
 
         this.svgKENN = 'TFM';
@@ -64,7 +77,7 @@ export class TFMRenderer extends TAMRenderer
     {
         this.PNODES = [];
         this.FNODES = [];
-        this.LINKNODES = [];
+		this.LLNODES = [];
         this.FAMILYLINKS = [];
 
         this.SVG_FAMILY_CIRCLES = null;
@@ -76,9 +89,15 @@ export class TFMRenderer extends TAMRenderer
         this.GRAPH_DATA = text;
     }
 
-    createFamilyForceGraph(graph, nodePositions = null)
+    createFamilyForceGraph(graph, nodePositions = null, lifelinePositions = null)
     {
         let objRef = this;
+        objRef.GRAPH = graph;        // save graph data temporarily to enable lifeline toggling
+        let LINKS = [];
+
+        let _showLifelines = parms.GET("SHOW_LIFELINES");
+        let _nodeRadius = parms.GET("NODE_RADIUS");
+        PARM_LIFELINE_WIDTH = PARM_LIFELINE_WIDTHfac * _nodeRadius;
 
         // list persons
         //----------------------------------
@@ -87,7 +106,7 @@ export class TFMRenderer extends TAMRenderer
             // set person data
             p.type = "PERSON";
             p.sr = 1;
-            p.r0 = parms.GET("NODE_RADIUS");
+            p.r0 = _nodeRadius;
             p.r = p.r0 * p.sr;
             p.cr = p.sex == parms.Sex.FEMALE ? p.r0 : 0;
             p.value = p.bdate ? p.bdate.getFullYear() : null;
@@ -112,12 +131,53 @@ export class TFMRenderer extends TAMRenderer
                 p.vis = {'x': 0, 'y': 0};
 
             objRef.PNODES.push(p);
+
+            // if active, create lifeline nodes
+            if (_showLifelines)
+            {
+                if (true && p.bdate && p.ddate)
+                {
+                    let startVal = p.bdate.getFullYear();
+                    let endVal = p.ddate.getFullYear();
+
+                    const segmentRange = 30;      // number of years per lifeline segment
+                    p.lifeline = [p];
+                    let val = startVal; 
+                    do
+                    {   let step = Math.min(segmentRange, endVal - val);
+                        val += step;
+                        
+                        // initialize node with random location scattered around the person location
+                        // -> leads to a smooth 'growing' appearance of lifelines if dynamically switched on
+                        var node = { 'type': "LIFELINENODE", 'value': val, 
+                                     'x': p.x + 3 * _nodeRadius * Math.random(),
+                                     'y': p.y + 3 * _nodeRadius * Math.random()
+                                    }; 
+                        var link = { "source": p.lifeline.at(-1), "target": node, "distance": step * PARM_RANGE_UNIT_LEN };    // array.at(-1) retrieves last element in array
+                        
+                        p.lifeline.push(node);
+                        this.LLNODES.push(node);
+                        LINKS.push(link);
+                    } 
+                    while (val < endVal);
+
+                    // apply saved lifeline positions, if available
+                    if (lifelinePositions && lifelinePositions[p.id]) {
+                        let llpos = lifelinePositions[p.id];
+                        for (let i = 1; i < p.lifeline.length && i < llpos.length; i++) {
+                            p.lifeline[i].x = llpos[i].x;
+                            p.lifeline[i].y = llpos[i].y;
+                        }
+                    }
+                }
+            }
         });
 
         setRange(objRef.PNODES, objRef.CurrentYear);
 
         // list families
         //----------------------------------
+        let _unknown = i18n("unknown");
         graph.families.forEach((f, key) =>
         {
             // add family
@@ -138,7 +198,6 @@ export class TFMRenderer extends TAMRenderer
             else
                 f.vis = {'x': 0, 'y': 0};
 
-            let _unknown = i18n("unknown");
             let _husb_surname = null;
             let _wife_surname = null;
             if ( f.husband ) {
@@ -179,13 +238,12 @@ export class TFMRenderer extends TAMRenderer
         // link persons depending on ancestral graph appearance
         //-------------------------------------------------------------
 
-        let LINKS = [];
         objRef.linkPersonsByFamilyNode(graph, LINKS, objRef);
         
         
         // Concat node links participating in force simulation in painter's order
         let NODES = objRef.FNODES.slice(0);
-        objRef.LINKNODES.forEach(n => NODES.push(n));
+        objRef.LLNODES.forEach(n => NODES.push(n));
         objRef.PNODES.forEach(n => NODES.push(n));
         // let _PNODES = [];
         // this.PNODES.forEach(n => _PNODES.push(n));
@@ -206,7 +264,7 @@ export class TFMRenderer extends TAMRenderer
             .force("similarity", function (alpha) { objRef.similarityForce(objRef.PNODES, alpha); })
             .force("collision", d3.forceCollide().radius(function(d){ return d.r; }))
             .force("link", objRef.LINK_FORCE)
-            .velocityDecay(parms.GET("FRICTION"))        // friction since d3.v4
+            .velocityDecay(parms.GET("FRICTION"))
             .alpha(parms.GET("ALPHA"))
             .alphaDecay(0)
             .on("tick", function tick() { objRef.tick(objRef); })
@@ -248,7 +306,16 @@ export class TFMRenderer extends TAMRenderer
             .attr("marker-end","url(#arrow)")
             ;
 
-        let _nr = parms.GET("NODE_RADIUS") / 4;
+        let _nr = _nodeRadius / 4;
+
+        objRef.SVG_LIFELINES = objRef.GRAPH_LAYER.selectAll(".lifelines")
+            .data(objRef.PNODES).enter()
+            .append("polyline")
+            .attr("fill","none")
+            .attr("stroke", PARM_LIFELINE_COLOR)
+            .attr("stroke-width", PARM_LIFELINE_WIDTH + "px")
+            .attr("stroke-opacity", PARM_LIFELINE_OPACITY);
+
         objRef.SVG_NODE_CIRCLES = objRef.GRAPH_LAYER.selectAll(".person")
             .data(objRef.PNODES).enter()
             .append("rect")
@@ -256,10 +323,10 @@ export class TFMRenderer extends TAMRenderer
             .style("fill", function(node) { return typeof(node.value) == "number" ? objRef.SVG_COLORMAP(node.value) : "red"; })
             .style("stroke", "#222")
             .attr("stroke-width", _nr + "px")
-            .attr("width", function (f) { return 2 * f.r; })
-            .attr("height", function (f) { return 2 * f.r; })
-            .attr("rx", function (f) { return f.cr; })
-            .attr("ry", function (f) { return f.cr; })
+            .attr("width", function (p) { return 2 * p.r; })
+            .attr("height", function (p) { return 2 * p.r; })
+            .attr("rx", function (p) { return p.cr; })
+            .attr("ry", function (p) { return p.cr; })
             ;
         
         if (parms.GET("SHOW_NAMES"))
@@ -439,12 +506,12 @@ export class TFMRenderer extends TAMRenderer
             } else {
                 this.Htreed = 0;
                 this.SVG_NODE_CIRCLES
+                    .style("stroke", function(p) { return p.fx == null ? "#222" : PARM_NODE_BORDER_COLOR_FIXED; })
                     .style("fill", function(p) { return p.fx == null ? objRef.SVG_COLORMAP(p.value) : "orange"; })
                     .attr("width", function (p) { return 2 * p.r * p.sr; })
                     .attr("height", function (p) { return 2 * p.r * p.sr; })
                     .attr("rx", function (p) { return p.cr * p.sr; })
                     .attr("ry", function (p) { return p.cr * p.sr; })
-                    .style("stroke", function(p) { return p.fx == null ? "#222" : PARM_NODE_BORDER_COLOR_FIXED; })
                     .attr("x", function (p) { return p.vis.x - p.r; })
                     .attr("y", function (p) { return p.vis.y - p.r; })
                     ;
@@ -459,7 +526,7 @@ export class TFMRenderer extends TAMRenderer
         
             
         // set links
-        let _arrowDfactor = parms.GET("ARROW_DICSTANCE_FACTOR");
+        let _arrowDfactor = parms.GET("ARROW_DISTANCE_FACTOR");
         let _arrowRadius = parms.GET("ARROW_RADIUS");
         this.SVG_LINKS
             .attr("x1", function(d) { return d.source.vis.x; })
@@ -478,10 +545,31 @@ export class TFMRenderer extends TAMRenderer
             })
             ;
         
+        // update lifeline points
+        if (this.SVG_LIFELINES)
+        {	
+            this.SVG_LIFELINES.attr('points', function(p) {
+                var path = [];    
+                if (p.lifeline) 
+                {
+                    // smooth the simulation points of the curve to avoid bends
+                    for (var i = 1; i < p.lifeline.length-1; i++) {  
+                        p.lifeline[i].x = p.lifeline[i].x * 0.2 + (p.lifeline[i-1].x + p.lifeline[i+1].x) * 0.4;
+                        p.lifeline[i].y = p.lifeline[i].y * 0.2 + (p.lifeline[i-1].y + p.lifeline[i+1].y) * 0.4;
+                    }
+                    
+                    // define visualized lifeline path
+                    path.push([p.vis.x, p.vis.y]);  // first lifeline node is the person itself -> anchor at its .vis position
+                    for (let i = 1; i < p.lifeline.length; i++)
+                        path.push([ p.lifeline[i].x, p.lifeline[i].y ]);
+                }
+                return path;
+            });
+        }
         // set labels
         if (parms.GET("SHOW_NAMES"))
         {
-            this.SVG_NODE_LABELS.attr("transform", this.placeLabel);
+            this.SVG_NODE_LABELS.attr("transform", this.placeLabelP);
             this.SVG_FAMILY_LABELS.attr("transform", this.placeLabel);
         }
     }
@@ -515,7 +603,7 @@ export class TFMRenderer extends TAMRenderer
         // compute label lengths and store them
         this.SVG_NODE_LABELS.each(function(d) { d.labelwidth = this.getComputedTextLength(); });
         // now adjust label position based on label lengths
-        this.SVG_NODE_LABELS.attr("transform", this.placeLabel);
+        this.SVG_NODE_LABELS.attr("transform", this.placeLabelP);
 
         
         // family labels
@@ -540,6 +628,65 @@ export class TFMRenderer extends TAMRenderer
         this.SVG_FAMILY_LABELS.attr("transform", this.placeLabel);
     }
 
+
+    placeLabelP(node)
+    {
+
+        // lifeline present (only for person nodes) and sufficiently long
+        if (node.lifeline && node.lifeline.length > 1)
+        {
+            // find actually visible path and its mid length
+            let len = 0;
+            let path = [node.vis];
+            let dists = [0];
+            for (var i = 1; i < node.lifeline.length; i++) {
+                path.push(node.lifeline[i]);
+                dists.push( distance(path.at(-2), path.at(-1)) );
+                len += dists.at(-1);
+            }
+            len *= 0.5;
+            
+            for (let i = 1; i < path.length; i++)
+            {
+                if (dists[i] > len)
+                {
+                    // align label with this segment
+                    let x0 = vec.copy(path[i-1]);
+                    let x1 = vec.copy(path[i]);
+                    let v = x1.sub(x0).div(dists[i]);    // if dists[i] is zero, len wouldn't fall in this segment 
+                    
+                    // center position
+                    let pos = x0.add(v.mul(len));
+
+                    // angle
+                    if (v.x < 0) v = v.negate();
+                    let n = new vec(v.y, -v.x);
+                    let angle = Math.atan2(v.y, v.x) * 57.3;       // 180/pi. atan2 is quite expensive in JS
+
+                    pos = pos.add(v.mul(-node.labelwidth * 0.5)).add(n.mul(PARM_LIFELINE_WIDTH));
+                                
+                    return "translate(" + pos.x + ", " + pos.y + ")  rotate(" + angle + ")";
+                }
+                len -= dists[i];
+            }
+        } else {
+            if (parms.GET("PERSON_LABELS_BELOW_NODE"))
+            {
+                // below the node
+                let x = node.vis.x - node.labelwidth * 0.5;
+                let y = node.vis.y + node.r + 1.0 * parms.GET("FONT_SIZE");
+                return "translate(" + x + ", " + y + ")";
+            }
+            else
+            {
+                // right beside the node
+                let x = node.vis.x + 1.5 * node.r;
+                let y = node.vis.y + parms.GET("FONT_SIZE")/4;
+                return "translate(" + x + ", " + y + ")";
+            }
+        }
+         
+    }
 
     placeLabel(node)
     {
@@ -567,11 +714,33 @@ export class TFMRenderer extends TAMRenderer
         
         //--- 1. List height field constraints
         let topopoints = [];
+        let _link_sample_stepsize = parms.GET("LINK_SAMPLE_STEPSIZE");
 
         // add constraints at person positions
         this.PNODES.forEach(p =>    {
             if (isNumber(p.value)) topopoints.push({ 'x' : p.vis.x, 'y': p.vis.y, 'value' : p.value });
             if (isNumber(p.valueD)) topopoints.push({ 'x' : p.vis.x, 'y': p.vis.y, 'value' : p.valueD });
+            // if present, create topopoints for lifelines
+            if (p.lifeline) 
+            {
+                // Note: p.lifeline[0] does not equal its visualized starting point, but the simulation point of the person
+                let path = p.lifeline.slice(0);
+                path[0].x = p.vis.x;
+                path[0].y = p.vis.y;
+
+                for (let j = 0; j < path.length-1; j++) 
+                {
+                    let pv0 = new vec(path[j].x, path[j].y, path[j].value);
+                    let pv1 = new vec(path[j+1].x, path[j+1].y, path[j+1].value);
+                    let v = pv1.sub(pv0);
+                    let nsteps = v.norm() / _link_sample_stepsize;
+                    if (nsteps > 0) {
+                        v = v.div(nsteps);
+                        for (let i = 0, pv = pv0; i < nsteps; i++, pv = pv.add(v))
+                            topopoints.push({ 'x' : pv.x, 'y': pv.y, 'value' : pv.z });
+                    }
+                }
+            }
         });
             
         // Create Topopoints for Family Links
@@ -582,7 +751,7 @@ export class TFMRenderer extends TAMRenderer
                     let pv0 = new vec(link.source.vis.x, link.source.vis.y, link.source.value);
                     let pv1 = new vec(link.target.vis.x, link.target.vis.y, link.target.value);
                     let v = pv1.sub(pv0);
-                    let nsteps = v.norm() / parms.GET("LINK_SAMPLE_STEPSIZE");
+                    let nsteps = v.norm() / _link_sample_stepsize;
                     if (nsteps > 0) {
                         v = v.div(nsteps);
                         for (let i = 0, pv = pv0; i < nsteps; i++, pv = pv.add(v))
@@ -695,6 +864,18 @@ export class TFMRenderer extends TAMRenderer
         return nodePositions;
 
     }
+    makeNodeLifelines() {
+        let lifelinePositions = {};
+        this.PNODES.forEach(p => { 
+            if (p.lifeline) {
+                var llnodes = [];
+                p.lifeline.forEach(ll => { llnodes.push({"x": ll.x, "y": ll.y }); });
+                lifelinePositions[p.id] = llnodes;
+            }
+        });
+
+        return lifelinePositions;
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -702,12 +883,14 @@ export class TFMRenderer extends TAMRenderer
     {
         // store person/family node positions with their id
         let nodePositions = this.makeNodePositions();
+        let lifelinePositions = this.makeNodeLifelines();
 
         let content = [JSON.stringify(
             {
                 "metadata": getMetadata(),
                 "parameters": getParameters(),
                 "nodePositions": nodePositions,
+                "lifelinePositions": lifelinePositions,
                 "nodeData": this.GRAPH_DATA
             },
             null, 2)]; // no replacement function, human readable indentation
@@ -728,11 +911,16 @@ export class TFMRenderer extends TAMRenderer
     saveData()
     {
         let nodePositions = this.makeNodePositions();
+        let lifelinePositions = this.makeNodeLifelines();
 
         let _d = this.PNODES[0];
         let _primID = _d.id;
         let _primName = _d.givenname + '/' + _d.surname + '/';
+        let _fileName = parms.GET("FILENAME");
+        let _tfilename = document.getElementById("filename");
+        if (_tfilename) { _fileName = _tfilename.value; }
         let idb_key = _primName + "-" + _primID;
+        if (_fileName) { idb_key = _fileName; }
         let dataset = 
             {   "TFMdata": [
                     {
@@ -742,6 +930,7 @@ export class TFMRenderer extends TAMRenderer
                         "metadata": getMetadata(' - TFM'),
                         "parameters": getParameters(),
                         "nodePositions": nodePositions,
+                        "lifelinePositions": lifelinePositions,
                         "nodeData": this.GRAPH_DATA
                     }
                 ]

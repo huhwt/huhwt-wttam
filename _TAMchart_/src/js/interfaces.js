@@ -270,6 +270,8 @@ export function loadFileFromDisk(folder)
 
 // load data from indexedDB, choose renderer based on store-name and create force graph
 export function loadDataFromIDB(dbName, storeName, key) {
+    // if ( key == null )
+    //     return;
     let renderer = parms.oGET("RENDERER");
     if (renderer) {
         toggleSVG(renderer);
@@ -435,6 +437,7 @@ function processIDBgedcom(dataset)
         set_tamDefaultParameters();
     }
     let gedcom = dataset.nodeData;
+    let dsname = processFILENAME(dataset.dsname);
     processGedcom(gedcom, function(gedcom, text) {
         estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
         let renderer = parms.oGET("RENDERER");
@@ -444,6 +447,13 @@ function processIDBgedcom(dataset)
         renderer.initSVGLayers(objRef);
         renderer.createFamilyForceGraph(gedcom);
     });
+}
+function processFILENAME(_dsname) {
+    let dsname = _dsname.replace('wtTAM-','');
+    parms.SET("FILENAME", dsname);
+    let _tfilename = document.getElementById("filename");
+    if (_tfilename) { _tfilename.value = dsname; }
+    return dsname;
 }
 
 // Process JSON loaded from a .tfm, load linked .ged or

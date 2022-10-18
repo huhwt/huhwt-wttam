@@ -62,7 +62,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.1.4.0.1';
+        return '2.1.7.0.1';
     }
 
     /**
@@ -213,6 +213,11 @@ class TAMaction extends AbstractModule
         $TAMpath = e(asset('snip/'));
         $TAMpath = str_replace("/public/snip/", "", $TAMpath) . "/modules_v4/huhwt-wttam/_TAMchart_/index-dev.html";
 
+        $TAMdname = Session::get('VIZ_DSname');
+        $TAMdname = str_replace("VIZ", "TAM", $TAMdname);
+        $TAMdname = str_replace("DATA", $tree->name(), $TAMdname);
+        Session::put('TAM_DSname', $TAMdname);
+
         // we don't want to transfer gedcom directly - prepare url for AJAX call
         $urlAJAX = [];
         $urlAJAX['module'] = $this->name();
@@ -234,8 +239,10 @@ class TAMaction extends AbstractModule
             'label'          => $label,
             'tree'           => $tree,
             'TAMpath'        => $TAMpath,
+            'TAMdname'       => $TAMdname,
             'urlAJAX'        => $urlAJAX,
             'jsimp'          => $jsImp,
+            'stylesheet'     => $this->assetUrl('css/cceTa.css'),
         ]);
     }
 
@@ -255,9 +262,14 @@ class TAMaction extends AbstractModule
         
         $gedKey = Session::get($actKey);
         $theGedcom = Session::get($gedKey);
-        $encodedString = json_decode($theGedcom);
+        $TAMdname = Session::get('TAM_DSname');
 
-        return response($encodedString);
+        $arr_string = array();
+        $decodedstring = json_decode($theGedcom);
+        $arr_string["gedcom"] = $decodedstring->gedcom;
+        $arr_string["dsname"] = $TAMdname;
+
+        return response($arr_string);
     }
 
     public function appName(): string

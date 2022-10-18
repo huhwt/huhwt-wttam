@@ -19,7 +19,7 @@ import { TICKCOUNTER_html } from "./tickcounter.js";
 import { switch_locale } from "./translations.js";
 import * as parms from "./parms.js";
 import * as DBman from "./dbman.js";
-import { onChangeFile, openNewTab, loadDataFromIDB } from "./interfaces.js";
+import { onChangeFile, openNewTab, loadDataFromIDB, resetSVGLayers } from "./interfaces.js";
 import { createDownloadSVG, dump_Htree } from "./export.js";
 import { TFMRenderer } from "./TFMrenderer.js";
 
@@ -158,6 +158,10 @@ function setTAMInteractions()
                 else if (event.keyCode == i18n("kc_M").charCodeAt(0)) {
                     toggleShowContours();
                     d3.select("#settings_show_contours").property('checked', parms.GET("SHOW_CONTOURS"));
+                }
+                else if (event.keyCode == "E".charCodeAt(0)) {
+                    toggleLifelines();
+                    d3.select("#settings_show_lifelines").property('checked', parms.GET("SHOW_LIFELINES"));
                 }
                 else if (event.keyCode == "L".charCodeAt(0)) {
                     toggleLinks();
@@ -309,6 +313,41 @@ function toggleShowGraph()
 {
     parms.TOGGLE("SHOW_GRAPH");
     parms.oGET("RENDERER").GRAPH_LAYER.attr("visibility", parms.GET("SHOW_GRAPH") ? "visible" : "hidden");
+}
+//---------------------------------------------------------------------------
+function toggleLifelines()
+{
+    let renderer = parms.oGET("RENDERER");
+    if (renderer && renderer instanceof TFMRenderer) {
+        parms.TOGGLE("SHOW_LIFELINES");
+        let transform = renderer.CANVAS.attr("transform");  // save current view on canvas
+        // save graph data
+        let graph = renderer.GRAPH;
+                
+        // stop any running simulation and reset SVG layers
+        if (renderer.FORCE_SIMULATION) 
+            renderer.FORCE_SIMULATION.stop();
+        resetSVGLayers(renderer);
+
+        // create new renderer with the saved data
+        /*jshint -W051 */
+        renderer = null;
+        renderer = new TFMRenderer();
+        parms.oSET("RENDERER", renderer);
+        // NOTE: graph already contains all the enriched data created during the createFamilyForceGraph procedure,
+        //  as well as all the simulation (p.x/y) and layout (p.vis.x/y) position data. We can still pass it as is
+        //  to the createFamilyForceGraph() function, we only need to make sure that any lifeline info is deleted
+        //  in case it is toggled off.
+        let _showLifelines = parms.GET("SHOW_LIFELINES");
+        if (!_showLifelines)
+            graph.persons.forEach( p => delete p.lifeline );
+
+        renderer.createFamilyForceGraph(graph);
+
+        // creating a new renderer created a new SVG CANVAS -> now restore view transform of this canvas
+        renderer.CANVAS.attr("transform", transform);   
+        parms.oSET("RENDERER", renderer);
+    }
 }
 //---------------------------------------------------------------------------
 function toggleShowContours()
@@ -494,6 +533,7 @@ export function initMenubar()
 
     // Graph Appearance
     d3.select("#settings_show_graph").property("checked", parms.GET("SHOW_GRAPH"));    
+    d3.select("#settings_show_lifelines").property("checked", parms.GET("SHOW_LIFELINES"));    
     d3.select("#settings_show_links").property("checked", parms.GET("SHOW_LINKS"));    
     d3.select("#settings_show_names").property("checked", parms.GET("SHOW_NAMES"));    
     d3.select("#settings_linkwidth").property("value", parms.GET("LINK_WIDTH"));
@@ -598,6 +638,9 @@ function setMenubarInteractions()
     d3.select("#settings_show_graph").on("input", function() {
         toggleShowGraph();
     });
+    d3.select("#settings_show_lifelines").on("input", function() {
+		toggleLifelines();
+	});
     d3.select("#settings_show_links").on("input", function() {
         toggleLinks();
     });
@@ -616,7 +659,16 @@ function setMenubarInteractions()
     d3.select("#settings_noderadius").on("input", function() {
         let _tv = parseInt(this.value);
         parms.SET("NODE_RADIUS", _tv);
-        if (renderer.SVG_NODE_CIRCLES) renderer.SVG_NODE_CIRCLES.attr("r", _tv);
+        if (renderer.PNODES) {
+            let _tw = 2 * _tv;
+            renderer.PNODES.forEach(n => {n.r0 = _tv; n.r = _tv;});
+            if (renderer.SVG_NODE_CIRCLES) {
+                renderer.SVG_NODE_CIRCLES
+                    .attr("width", function (p) { return _tw; })
+                    .attr("height", function (p) { return _tw; })
+                ;
+            }
+        }
     });
     d3.select("#settings_pnodeopacity").on("input", function() {
         let _tv = parseFloat(this.value);

@@ -39,6 +39,7 @@ const PARMSarr = [
 
     // Graph appearance
     [ "SHOW_GRAPH" , true],
+    [ "SHOW_LIFELINES" , false],
     [ "SHOW_LINKS" , true],
     [ "SHOW_NAMES" , true],
     [ "LINK_WIDTH" , 2],

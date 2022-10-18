@@ -317,7 +317,7 @@ export class TAMRenderer
         if (_sfStrength == 0)
             return;
 
-        var target_slope = 20;    // a value difference of 1 should map to a unit distance of 10
+        var target_slope = 10;    // a value difference of 1 should map to a unit distance of 10
 
         const VIRTUAL_LINK_STRENGTH = _sfStrength / Math.max(nodes.length,1);
 
