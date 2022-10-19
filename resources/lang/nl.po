@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.1.1\n"
 
 msgid "back to ClippingsCart-Show"
 msgstr "terug naar knipselverzameling"
@@ -28,3 +28,15 @@ msgstr "TAM starten"
 
 msgid "Key to retrieve data"
 msgstr "Sleutel voor gegevensoverdracht"
+
+msgid "IDB key"
+msgstr "IDB-identificatienummer"
+
+msgid "Clippings identifier"
+msgstr "Stamboomknipsels-identificatienummer"
+
+msgid "(Own identifier)"
+msgstr "(Eigen identificatienummer)"
+
+msgid "Optional: Set own identifier"
+msgstr "Optioneel: Eigen identificatienummer instellen"
