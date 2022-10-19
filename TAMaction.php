@@ -62,7 +62,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.1.7.0.1';
+        return '2.1.7.0.2';
     }
 
     /**
