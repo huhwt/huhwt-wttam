@@ -29,7 +29,7 @@
 	<script type="module" src="src/js/export.js"></script>
 	<script type="module" src="src/js/interfaces.js"></script>
 	<script type="module" src="src/js/guiparts.js"></script>
-    <script type="module" src="src/js/main.js"></script>
+    <script type="module" src="src/js/TAMmain.js"></script>
 	<link rel="stylesheet" type="text/css" href="src/css/tamv6.css">
 </head>
 
@@ -74,17 +74,6 @@
 	</div>
 
 	<div id="overlay" style="display: none;">
-		<div id="background" onclick="closeModal()"></div>
-		<div class="modal">
-			<button type="button" class="close" onclick="closeModal()" alt="close">×</button>
-			<h1>Cannot find GEDCOM file</h1>
-			<p><i><span id="missing-ged-file-name">unknown</span></i></p>
-			<p>Please select it from your computer, or <br />make sure it is placed within the subfolder <i>\data</i>.</p>
-			<form name="data-source">
-				<label for="modal-file-upload" class="custom-button">Open file</label>
-				<input type="file" id="modal-file-upload" onchange="processModalFileUpload()" accept=".ged" class="input-file">
-			</form>
-		</div>
 	</div>
 	<!-------------------------------------------------------------------------------------->
 	<div id="tickcountInfo"  class="dialbar" style="display: none;">
@@ -96,7 +85,7 @@
 <script type="module">
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///  DATA LOADING
-import { mainDB } from "./src/js/main.js";
+import { mainDB } from "./src/js/TAMmain.js";
 
 mainDB("H-Tree");
 
