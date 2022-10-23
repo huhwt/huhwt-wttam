@@ -177,17 +177,26 @@ function build_gedcom(lines)
                         if (current_pers.givenname == null) {                          // given name
                             current_pers.givenname = tokens[j].trim();
                         } else {
-                            current_pers.givenname = current_pers.givenname + ' ' + tokens[j].trim();
+                            let _tj = tokens[j].trim();
+                            switch (_tj) {
+                                case "von":
+                                case "des":
+                                case "zu":
+                                case "of":
+                                    break;
+                                default:
+                                    current_pers.givenname = current_pers.givenname + ' ' + tokens[j].trim();
+                            }
                         }
-                    }
-                    if (current_pers.givenname == null) {
-                        current_pers.givenname = i18n("unknown");
                     }
                     // if (current_pers.surname == null) {
                     //     current_pers.surname = i18n("unknown").toUpperCase();
                     // }
                 }
-            }
+                if (current_pers.givenname == null) {
+                    current_pers.givenname = i18n("unknown");
+                }
+        }
             else if (nodeType == "SEX" && current_pers)
             {
                 let sex = tokens[2].trim();

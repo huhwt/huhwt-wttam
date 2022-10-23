@@ -51,12 +51,12 @@ This section describes how to install this module.
 For the latest version, simply replace the existing huhwt-wttam files with those from the latest release.
 
 <a name="translation"></a>
-## translation
+## Translation
 
 You can help translate this module. The po/mo system is used in the PHP part. The Javascript components have their own independent i18n implementation. The texts are represented by key/value assignments, the content can be found in 'translations.js'.
 Updated translations will be distributed with the next release of the module.
 
-So far there is only English and German.
+So far there is only English, German and Dutch.
 
 Special thanks to TheDutchJewel for the translation into Dutch.
 
@@ -66,7 +66,7 @@ Special thanks to TheDutchJewel for the translation into Dutch.
 <span style="font-weight: bold;">Issues: </span>You can report bugs by filing an issue in this GitHub repository.
 
 <a name="thanks"></a>
-## Acknowledgments
+## Thanks
 
 Special thanks are due to R.Preiner and his team at the University of Graz, who published the procedure in his repository https://github.com/rpreiner/tam.
 

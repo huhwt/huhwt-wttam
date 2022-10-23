@@ -21,7 +21,7 @@ import * as parms from "./parms.js";
 import { timestamp } from './utils.js';
 import { putDB } from "./dbman.js";
 
-const TAM_DESCRIPTION = "Topographic Attribute Maps Demo";
+const TAM_DESCRIPTION = "Topographic Attribute Maps H&Hwt";
 
 var downloadableFile = null;
 
