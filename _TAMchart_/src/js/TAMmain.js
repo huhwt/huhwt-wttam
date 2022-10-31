@@ -48,8 +48,8 @@ export function mainDB(stName) {
 
         default:
         case "Gedcom":
-            idbKey = localStorage.getItem( "actGedcom" );
-            // localStorage.removeItem("actGedcom");
+            idbKey = localStorage.getItem( "loadTAM" );
+            localStorage.removeItem("actGedcom");    // EW.H - will be used in case of refactoring
             loadDataFromIDB("wtTAM", "Gedcom", idbKey);
             break;
             }
