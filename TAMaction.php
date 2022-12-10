@@ -18,6 +18,7 @@ use Fisharebest\Webtrees\Module\ModuleGlobalInterface;
 
 use Fisharebest\Webtrees\Session;
 use Fisharebest\Webtrees\Tree;
+use Fisharebest\Webtrees\Validator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -62,7 +63,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.1.7.0.2';
+        return '2.1.12.0';
     }
 
     /**
@@ -200,11 +201,9 @@ class TAMaction extends AbstractModule
      */
     public function getTAMAction(ServerRequestInterface $request): ResponseInterface
     {
-        $tree = $request->getAttribute('tree');
-        assert($tree instanceof Tree);
+        $tree = Validator::attributes($request)->tree();
 
-        $params = (array) $request->getQueryParams();
-        $actKey = $params['actKey'] ?? '';
+        $actKey = Validator::queryParams($request)->string('actKey', '');
 
         $title = I18N::translate('TAM Launch');
         $label = I18N::translate('Key to retrieve data');
@@ -257,8 +256,7 @@ class TAMaction extends AbstractModule
      */
     public function getGedcomAction(ServerRequestInterface $request): ResponseInterface
     {
-        $params = (array) $request->getQueryParams();
-        $actKey = $params['actKey'] ?? '';
+        $actKey = Validator::queryParams($request)->string('actKey', '');
         
         $gedKey = Session::get($actKey);
         $theGedcom = Session::get($gedKey);

@@ -43,7 +43,7 @@ export function MENUBAR_html() {
 	<!-------------------------------------------------------------------------------------->
 	<div class="title">
 		Topographic Attribute Maps - ℍ&ℍwt
-		<span id="version" class="version" title="${i18n('powered by TAM 1.20')}">2.2</span>
+		<span id="version" class="version" title="${i18n('powered by TAM 1.20')}">2.1.12</span>
 	</div>
 	<fieldset>
 		<legend><label class="toggler" for="toggle_ia">${i18n("mb_ntrct")}</label></legend>
