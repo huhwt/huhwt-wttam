@@ -14,13 +14,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 import * as gui from "./guiparts.js";
+import { showIDBstate } from "./dbman.js";
 import { TICKCOUNTER_html } from "./tickcounter.js";
 // import { default as i18n } from "./i18n.js";
-import { switch_locale } from "./translations.js";
+import * as translate from "./translations.js";
 import * as parms from "./parms.js";
 import * as DBman from "./dbman.js";
-import { onChangeFile, openNewTab, loadDataFromIDB, resetSVGLayers } from "./interfaces.js";
-import { createDownloadSVG, dump_Htree } from "./export.js";
+import { onChangeFile, onClickFile, openNewTab, loadDataFromIDB, resetSVGLayers } from "./interfaces.js";
+import { createDownloadSVGimage, createDownloadSVGhtml, dump_Htree } from "./export.js";
 import { TFMRenderer } from "./TFMrenderer.js";
 
 export function initInteractions(objRef) 
@@ -32,6 +33,7 @@ export function initInteractions(objRef)
     let sKENN = "#s" + sSuff;
 
     let the_SVG = d3.select(sKENN);
+    objRef.SVG = the_SVG;
     let the_def = the_SVG.select("defs");
     let the_defs = the_def._groups[0][0];
     let makePattern = (the_defs.childElementCount == 2 ? true : false);
@@ -69,6 +71,9 @@ export function initInteractions(objRef)
             ;
     }
 
+    // initialize zoom and pan capabilities
+    initZoom(objRef);
+
     // initialize tooltips for hovering over nodes
     initTooltip(objRef);
 
@@ -80,10 +85,33 @@ export function initInteractions(objRef)
 
     // define interaction possibilities for menu bar
     setMenubarInteractions(objRef);
+    set_CONTROLS_actions();
 
     // reset tickCounterInfo
     initTickCountInfo();
 
+}
+
+export function initZoom(objRef) {
+    // initialize zoom and pan capabilities
+    let the_CANVAS = objRef.CANVAS;
+    var the_zoom = d3.zoom()
+                .on("zoom", function({transform}) {
+                    objRef.s_transform.k = transform.k;
+                    objRef.s_transform.x = transform.x;
+                    objRef.s_transform.y = transform.y;
+                    the_CANVAS.attr("transform", transform); 
+                    d3.select('#zoom_value').text(transform.k*100);
+                    d3.select('#x_value').text(transform.x);
+                    d3.select('#y_value').text(transform.y);
+                })
+                .scaleExtent([0.01, 100])
+                ;
+    objRef.zoomO = the_zoom;
+    objRef.SVG
+        .call(the_zoom)
+        .on('dblclick.zoom', null)
+        ;
 }
 
 export function initTickCountInfo() {
@@ -96,20 +124,16 @@ export function initTickCountInfo() {
     putTickCountInfo("#tcinfo_modvalue", "_");
 }
 
-export function toggleSVG(renderer) {
+export function showSVG(renderer, show=true) {
     let sSuff = renderer.get_sKENN();
     let sKENN = "#s" + sSuff;
     let _svg = d3.select(sKENN);
-    let _isVisible = _svg.style("display");
-    switch (_isVisible) {
-        case "none":
+    if (show)
             _svg.style("display", "inline");
-            break;
-        default:
+    else
             _svg.style("display", "none");
         }
 
-}
 /////////////////////////////////////////////////////////////////////////////
 ///  SVG INTERACTIONS
 
@@ -248,7 +272,7 @@ function dragStartNode(event, d)
     {
         renderer.resetScalarField(renderer.instance);
 
-        if (!parms.GET("ENERGIZE"))
+        if (!parms.GET("ENERGIZE") || parms.GET("FREEZED"))
             renderer.FORCE_SIMULATION.velocityDecay(1);    // don't move anything than the selected node!
 
         renderer.FORCE_SIMULATION.alpha(parms.GET("ALPHA")).restart();
@@ -273,7 +297,7 @@ function dragNode(event, d)
 //---------------------------------------------------------------------------
 function dragEndNode(event, d)
 {
-    if (!event.active && !parms.GET("ENERGIZE"))
+    if ((!event.active && !parms.GET("ENERGIZE")) || parms.GET("FREEZED"))
         parms.oGET("RENDERER").FORCE_SIMULATION.velocityDecay(parms.GET("FRICTION")).alpha(0);    // reset friction
 
     //d.fx = d.fy = null;
@@ -284,16 +308,21 @@ function dragEndNode(event, d)
 //---------------------------------------------------------------------------
 function toggleEnergizeSimulation()
 {
+    if (parms.GET("FREEZED"))
+        return;
+
     parms.TOGGLE("ENERGIZE");
     let renderer = parms.oGET("RENDERER");
     let _go = parms.GET("ENERGIZE");
     if (_go)
     {
         renderer.resetScalarField(renderer.instance);
-        renderer.FORCE_SIMULATION.alpha(parms.GET("ALPHA")).restart();
+        renderer.FORCE_SIMULATION.alpha(parms.GET("ALPHA")).alphaTarget(0.05).restart();
     }
-    else
+    else {
         renderer.FORCE_SIMULATION.alpha(0);
+        renderer.FORCE_SIMULATION.alphaTarget(null);
+    }
 }
 //---------------------------------------------------------------------------
 function toggleShading()
@@ -388,8 +417,8 @@ function toggleShowTunnels()
 function toggleReverseColormap() 
 {
     parms.TOGGLE("REVERSE_COLORMAP");
-    if (!parms.GET("ENERGIZE")) {
-        let _renderer = parms.oGET("RENDERER");
+    let _renderer = parms.oGET("RENDERER");
+    if (!parms.GET("ENERGIZE") || _renderer.instance.Htreed == 2) {
         _renderer.setColorMap(_renderer.instance);
         _renderer.updateScalarField(_renderer.instance);
     }
@@ -493,6 +522,7 @@ export function Wswitch_locale(_locale) {
         parms.SET("ACTIVE_LOCALE", _locale);
         initMenubar();
         setMenubarInteractions();
+        set_CONTROLS_actions();
     }
 }
 
@@ -500,7 +530,7 @@ export function initMenubar()
 {
     let active_language = i18n("ZZZZ");
     if (active_language != parms.GET("ACTIVE_LOCALE")) {
-        switch_locale(parms.GET("ACTIVE_LOCALE"));
+        translate.switch_locale(parms.GET("ACTIVE_LOCALE"));
         let mbHTML = gui.MENUBAR_html();
         let MBelmnt = document.getElementById("menubar");
         MBelmnt.innerHTML = mbHTML;
@@ -511,6 +541,14 @@ export function initMenubar()
         let TCelmnt = document.getElementById("tickcountInfo");
         TCelmnt.innerHTML = tcHTML;
     }
+    let FIelmnt = document.getElementById("forceInfo");
+    if (!parms.GET('FREEZED')) {
+        let ctHTML = gui.CONTROLS_html();
+        FIelmnt.innerHTML = ctHTML;
+    } else
+        FIelmnt.innerHTML = '';
+
+    LBprep();
 
     d3.select("#settings_dataset").property("value", parms.GET("FILENAME"));
 
@@ -560,9 +598,35 @@ export function initMenubar()
 
 }
 //---------------------------------------------------------------------------
+
+function LBprep()
+{
+    let active_language = i18n("ZZZZ");
+
+    let cLselmnt = document.getElementById("LANGsel");
+    cLselmnt.innerHTML = '';
+    const LANGSsAt = translate.LANGsAt;
+    for (const key in LANGSsAt) {
+        let _vals = LANGSsAt[key];
+        let cLsd = document.createElement("input");
+        cLsd.classList = "btn btn-sm btn-smb button__lang";
+        cLsd.type = "button";
+        cLsd.value = _vals[1];
+        if (active_language == _vals[1])
+            cLsd.classList += " active";
+        cLsd.title = _vals[0];
+        // cLsd.setAttribute('style', "border:1px solid gray");
+        let _id = "btn_l_" + _vals[1];
+        cLsd.id = _id;
+        cLselmnt.appendChild(cLsd);
+    }
+}
+
+//---------------------------------------------------------------------------
 function setMenubarInteractions()
 {
     let renderer = parms.oGET("RENDERER");
+    let setting_activ = false;
 
     //  Load From IDB
     d3.select("#btnLoad").on("click", function(event) {
@@ -571,6 +635,9 @@ function setMenubarInteractions()
     //  Load File
     d3.select("#browse").on("change", function(event) {
         onChangeFile(event);
+    });
+    d3.select("#browse").on("click", function(event) {
+        onClickFile(event);
     });
     d3.select("#fakeBrowse").on("click", function(event) {
         document.getElementById('browse').click();
@@ -586,12 +653,31 @@ function setMenubarInteractions()
         let _rkenn = renderer.svgKENN;
         let _elem = 's' + _rkenn;
         let _fnSVG = _rkenn + '.svg';
-        createDownloadSVG(document.getElementById(_elem).outerHTML, _fnSVG);
-    });        
+        createDownloadSVGimage(document.getElementById(_elem).outerHTML, _fnSVG);
+    });
+    //  Viewport Dimensions
+    // viewboxdim
+    d3.selectAll("[data-vbdim]").on("click", function (e) {
+        let vbdim = this.value;
+        let vbdact = parms.GET("viewboxdim");
+        if (vbdim !== vbdact) {
+            document.activeElement.blur();
+            renderer.setvbDim(vbdim);
+        }
+    });
+
     //  Interaction
-    d3.select("#settings_freeze").on("click", function (e) {
-        toggleEnergizeSimulation();
-    });        
+    setting_activ = !parms.GET("FREEZED");
+    if (setting_activ) {
+        d3.select("#settings_freeze").on("click", function (e) {
+            toggleEnergizeSimulation();
+        });
+    } else {
+        d3.select("#settings_freeze").on("click", function (e) {
+            e.stopPropagation();
+            blockCheckBox("settings_freeze")
+        });
+    }
     d3.select("#settings_select_time").on("click", function(e){
         toggleSelectTime();
     });    
@@ -756,6 +842,12 @@ function setMenubarInteractions()
     d3.select("#btn_l_nl").on("click", function (e) {
         Wswitch_locale('nl');
     });
+    d3.select("#btn_l_ca").on("click", function (e) {
+        Wswitch_locale('ca');
+    });
+    d3.select("#btn_l_es").on("click", function (e) {
+        Wswitch_locale('es');
+    });
 
     d3.select("#settings_linkdist").on("input", function() {
         parms.SET("LINK_DISTANCE", parseInt(this.value));
@@ -766,6 +858,146 @@ function setMenubarInteractions()
         setTickCountInfo(renderer.instance, 'min');
     });
 
+}
+
+function blockCheckBox(cbID, defVal=true) {
+    let cb = document.getElementById(cbID);
+    if( cb.type = 'checkbox')
+        d3.select('#'+cbID).property('checked', defVal);
+}
+
+function set_CONTROLS_actions()
+{
+    let renderer = parms.oGET("RENDERER");
+    if (!renderer)
+        return;
+
+    // Force Info
+    d3.selectAll("a[data-info]").on("click", function (e) {
+        let valueInfo = this.getAttribute("data-info");
+        e.stopPropagation();
+        check_CONTROLS(renderer, valueInfo);
+    });
+    d3.select('#alpha_value').on("click", function(e) {
+        e.stopPropagation();
+        parms.SET("ENERGIZE", true);
+        renderer.resetScalarField(renderer.instance);
+        renderer.forceRefresh = true;
+        renderer.simLoop = 90;
+        renderer.FORCE_SIMULATION.alpha(1).restart();
+    });
+
+}
+
+function check_CONTROLS(renderer, valueInfo) {
+    let objRef = renderer.instance;
+    if(valueInfo == "print") {
+        console.log("print Simulation", renderer.FORCE_SIMULATION);
+        console.log("print yNODES", renderer.yNODES);
+        console.log("print yLINKS", renderer.yLINKS);
+    } else if(valueInfo == "export") {
+        let _rkenn = renderer.svgKENN;
+        let _elem = 's' + _rkenn;
+        let _fnSVG = _rkenn + '.html';
+        createDownloadSVGhtml(document.getElementById(_elem).outerHTML, _fnSVG, _elem);
+    } else if(valueInfo == "stop") {
+        let _siMODE = parms.GET("SIMmode");
+        if (_siMODE == "TREE") {
+            toggleEnergizeSimulation("ALPHA_T");
+            // parms.SET("ENERGIZE", false);
+            // renderer.forceRefresh = false;
+            // renderer.simLoop = 90;
+            // renderer.FORCE_SIMULATION.alpha(0);
+            // parms.SET("SHOW_YEARVALUES", true);
+            registertooltipYVeventhandler();
+        } else if (_siMODE == "TLINE") {
+                toggleEnergizeSimulation("ALPHA_T");
+                // parms.SET("ENERGIZE", false);
+                // renderer.forceRefresh = false;
+                // renderer.simLoop = 90;
+                // renderer.FORCE_SIMULATION.alpha(0);
+                // parms.SET("SHOW_YEARVALUES", true);
+                registertooltipYVeventhandler();
+            } else {
+            toggleEnergizeSimulation("ALPHA_x");
+        }
+    } else if(valueInfo == "rerun") {
+        rerunSIM(renderer);
+    } else if(valueInfo == "center") { 
+        var _SVG = objRef.SVG;
+        // let the_CANVAS = objRef.CANVAS._groups[0][0];
+        // let _transform = the_CANVAS.getAttribute('transform');
+        _SVG.call(
+            objRef.zoomO.transform,
+            d3.zoomIdentity.translate(0, 0).scale(1)
+        );
+        objRef.s_transform.x = 0;
+        objRef.s_transform.y = 0;
+        objRef.s_transform.k = 1;
+        // shiftRuler(0);
+        // let the_CANVASu = objRef.CANVAS._groups[0][0];
+        // let _transformu = the_CANVASu.getAttribute('transform');
+        // console.log("center pre:", _transform,"post:", _transformu);
+    } else if(valueInfo == "zoom-in") {
+        let _transform = objRef.s_transform;
+        let _scale = _transform.k * parms.ZOOMfactor;
+        _transform.k = _scale;
+        objRef.s_transform.k = _transform.k;
+        objRef.s_transform.x = _transform.x;
+        objRef.s_transform.y = _transform.y;
+        let _SVG = objRef.SVG;
+        _SVG.call(
+            objRef.zoomO.transform,
+            d3.zoomIdentity.translate(_transform.x, _transform.y).scale(_transform.k)
+        );
+        d3.select('#zoom_value').text(_transform.k*100);
+        d3.select('#x_value').text(_transform.x);
+        d3.select('#y_value').text(_transform.y);
+    } else if(valueInfo == "zoom-out") {
+        let _transform = objRef.s_transform;
+        let _scale = _transform.k / parms.ZOOMfactor;
+        _transform.k = _scale;
+        objRef.s_transform.k = _transform.k;
+        objRef.s_transform.x = _transform.x;
+        objRef.s_transform.y = _transform.y;
+        let _SVG = objRef.SVG;
+        _SVG.call(
+            objRef.zoomO.transform,
+            d3.zoomIdentity.translate(_transform.x, _transform.y).scale(_transform.k)
+        );
+        d3.select('#zoom_value').text(_transform.k*100);
+        d3.select('#x_value').text(_transform.x);
+        d3.select('#y_value').text(_transform.y);
+    }
+
+}
+
+export function rerunSIM(renderer) {
+    parms.SET("ENERGIZE", true);
+    let _aF = renderer.FORCE_SIMULATION.alpha();
+    _aF += 0.2;
+    let _aFm = 1;
+    let _aT = parms.GET("ALPHA_target");
+    if (renderer.SIMmode == "TREE") {
+        renderer.resetScalarField(renderer.instance);
+        // renderer.forceRefresh = true;
+        parms.SET("SHOW_YEARVALUES", false);
+        registertooltipYVeventhandler();
+        _aFm = parms.GET("ALPHA_T");
+        if (_aF > _aFm) { _aF = _aFm; }
+        renderer.instance.FORCE_SIMULATION
+            .alpha(_aF)
+            .alphaTarget(_aT)
+            .restart()
+            ;
+    } else {
+        _aFm = parms.GET("ALPHA_x");
+        if (_aF > 1) { _aF = 1; }
+        renderer.instance.FORCE_SIMULATION
+            .alpha(_aF)
+            .restart()
+            ;
+    }
 }
 
 function setRANGE(renderer, _RANGE, _tv) {
@@ -936,157 +1168,4 @@ function registertooltipYVeventhandler(objRef)
         }
         d3.select("#tooltipYV").style("visibility", "hidden");
     }
-}
-
-export function closeModalIDB()
-{
-    document.querySelector("#overlay").style.display = "none";
-    let ovHTML = gui.FILE_MODAL();
-    let OVelmnt = document.getElementById("overlay");
-    OVelmnt.innerHTML = ovHTML;
-}
-
-export function showIDBstate() {
-    let ovHTML = gui.IDB_INDEX();
-    let OVelmnt = document.getElementById("overlay");
-    OVelmnt.innerHTML = ovHTML;
-    d3.select("#overlay").on("click", function(event) {
-        closeModalIDB(event);
-    });
-
-    const _liHead = document.getElementById("idbstores");
-    _liHead.innerHTML = "";
-    let db;
-    const mkeyList = new Map();
-    const DB = new Promise((resolve, reject) => {
-        const request = indexedDB.open("wtTAM");
-        request.onsuccess = () => resolve(request.result);
-    });
-    const idbSlist = new Promise((resolve, reject) => {
-        DB.then(idb => {
-            db = idb;
-            let dbos = idb.objectStoreNames;
-            let _dbos = Array.from(dbos);
-            resolve(_dbos);
-        });
-    });
-    idbSlist.then(snames => {
-            let _snames = snames;
-                snames.forEach(sname => {
-                    const liItem = document.createElement("li");
-                    liItem.classList = 'ulli';
-                    _liHead.appendChild(liItem);
-                    const param = document.createElement("p");
-                    param.innerHTML = sname;
-                    liItem.appendChild(param);
-                    const showButton = document.createElement('button');
-                    liItem.appendChild(showButton);
-                    showButton.innerHTML = '>';
-                    showButton.title = 'Click to Show Items';
-                    // here we are setting a data attribute on our show button to say what task we want shown if it is clicked!
-                    showButton.setAttribute('key-task', sname);
-                    showButton.onclick = function(event) {
-                      showIDBkeys(event);
-                    };
-                    // liItem itself will do nothing
-                    liItem.onclick = function(event) {
-                        event.stopPropagation();
-                    };
-                });
-                document.querySelector("#overlay").style.display = "inline";
-        });
-}
-
-function showFromIDB(event) {
-    let actNodeE = event.target;
-    let dstring = event.target.getAttribute("show-task");
-    event.stopPropagation();
-    closeModalIDB();
-    let dstrings = dstring.split("|");
-    let dbName = "wtTAM";
-    let dbStore = dstrings[0];
-    let dbKey = dstrings[1];
-    loadDataFromIDB(dbName, dbStore, dbKey);
-}
-
-export function showIDBkeys(event) {
-    let actNodeE = event.target;
-    let actNode = actNodeE.parentNode;
-    let sname = event.target.getAttribute("key-task");
-    event.stopPropagation();
-    let db;
-    const DB = new Promise((resolve, reject) => {
-        const request = indexedDB.open("wtTAM");
-        request.onsuccess = () => {
-            db = request.result;
-            showIDBkeysL(actNode, db, sname, actNodeE);
-            resolve(db);
-        };
-    });
-}
-
-function showIDBkeysL(actNode, db, sname, actNodeE) {
-    const DBtactn = new Promise((res, rej) => {
-        let taction = db.transaction(sname, "readonly");
-        let ostore = taction.objectStore(sname);
-        let req = ostore.openCursor();
-
-        let _keyList = [];
-        req.onsuccess = function(e) {
-            let curs = e.target.result;
-            if (curs) {
-                let _key = curs.primaryKey;
-                _keyList.push(_key);
-                curs.continue();
-            } else {
-                showIDBkeysLdo(actNode, sname, _keyList, actNodeE);
-            }
-        };
-        req.oncomplete = (ev) => {
-            res(_keyList);
-        };
-        req.onerror = (ev) => {
-            rej(ev);
-        };
-    });
-}
-
-function showIDBkeysLdo(actNode, sname, keyList, actNodeE) {
-    const oliHead = document.createElement("ol");
-    if (keyList.length > 0) {
-        keyList.forEach( idbKey => {
-            const oliItem = document.createElement("li");
-            // oliItem.innerHTML = ':';
-            oliItem.classList = 'olli';
-            oliHead.appendChild(oliItem);
-            oliItem.title = 'Load from Store';
-            const param = document.createElement("p");
-            param.innerHTML = idbKey;
-            oliItem.appendChild(param);
-            // here we are setting a data attribute on our param to say what task we want done if it is clicked!
-            param.setAttribute('show-task', sname+'|'+idbKey);
-            param.onclick = function(event) {
-                showFromIDB(event);
-            };
-            const delButton = document.createElement('button');
-            oliItem.appendChild(delButton);
-            delButton.innerHTML = 'E';
-            delButton.title = 'Erase from Store';
-            // here we are setting a data attribute on our del button to say what task we want done if it is clicked!
-            delButton.setAttribute('del-task', sname+'|'+idbKey);
-            delButton.onclick = function(event) {
-                delIDBkey(event);
-            };
-        });
-    } else {
-        const param = document.createElement("p");
-        // oliItem.innerHTML = ':';
-        oliHead.appendChild(param);
-        param.innerHTML = 'Number of entries in this Store: 0';
-    }
-    actNode.appendChild(oliHead);
-    actNodeE.innerHTML = '';       // show button will be set inactiv
-    actNodeE.onclick = function(event) {
-        event.stopPropagation();
-    };
 }

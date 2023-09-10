@@ -1,0 +1,29 @@
+msgid "back to ClippingsCart-Show"
+msgstr "Tornar a retallades de cartes"
+
+msgid "Please wait - transfer in progress"
+msgstr "Per favor, espere... -tranferéncia en curs-"
+
+msgid "Start TAM in new tab"
+msgstr "Iniciar TAM en una nova pestanya"
+
+msgid "Transfer completed"
+msgstr "Tranferència completada"
+
+msgid "TAM Launch"
+msgstr "Llançament de TAM"
+
+msgid "Key to retrieve data"
+msgstr "Clau per recuperar dades"
+
+msgid "IDB key"
+msgstr "Clau IDB"
+
+msgid "Clippings identifier"
+msgstr "Identificador de retallades"
+
+msgid "(Own identifier)"
+msgstr "(Identificador propi)"
+
+msgid "Optional: Set own identifier"
+msgstr "Opcional: Establir identificador propi"

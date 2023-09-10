@@ -1,10 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Topographic Attribute Maps Demo
-// Copyright 2021 Reinhold Preiner
-//
-// This code is licensed under an MIT License.
-// See the accompanying LICENSE file for details.
+// wtTAM
 //
 // i18n functionality added by huhwt
 // indexedDB functionality added by huhwt
@@ -14,6 +10,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 import * as parms from "./parms.js";
+import * as gui from "./guiparts.js";
+import { loadDataFromIDB } from "./interfaces.js";
 
 export function putDB(dbName, storeName, data) {
     let idb = writeToDB(dbName, storeName, data);
@@ -112,29 +110,33 @@ export function readFromDB(dname, sname, key) {
 
 export function testDBstore(DBname, snames)
 {
+    let osAnz = snames.length;
     const doShow = showSnames(DBname, snames[0]);
     var db;
     doShow.then( value => {
         let _version = value.version;
         let _osnames = value.osnames;
-        if (_version == 3) { return true; }
-        if ( !_osnames.contains(snames[0])) {
-            let _sname1 = snames[0];
-            let DBreq1 = window.indexedDB.open(DBname, 1);
-            DBreq1.onupgradeneeded = function() {
-                db = DBreq1.result;
-                db.onerror = function(ee) {
-                    alert("IndexedDB - onupgradeneeded - " + ee.target.errorCode);
+        if (_version == (osAnz - 1)) { return true; }
+        if (osAnz > 0) {
+            if ( !_osnames.contains(snames[0])) {
+                let _sname1 = snames[0];
+                let DBreq1 = window.indexedDB.open(DBname, 1);
+                DBreq1.onupgradeneeded = function() {
+                    db = DBreq1.result;
+                    db.onerror = function(ee) {
+                        alert("IndexedDB - onupgradeneeded - " + ee.target.errorCode);
+                    };
+                    db.createObjectStore(_sname1, {keyPath: "storeID"});
                 };
-                db.createObjectStore(_sname1, {keyPath: "storeID"});
-            };
-            DBreq1.onsuccess = function() {
-                db = DBreq1.result;
-                db.close();
-            };
-            _version++;
+                DBreq1.onsuccess = function() {
+                    db = DBreq1.result;
+                    db.close();
+                };
+                _version++;
+            }
         }
-        if (!_osnames.contains(snames[1])) {
+        if (osAnz > 1) {
+            if (!_osnames.contains(snames[1])) {
             let _sname2 = snames[1];
             let DBreq2 = window.indexedDB.open(DBname, 2);
             DBreq2.onupgradeneeded = function() {
@@ -149,22 +151,43 @@ export function testDBstore(DBname, snames)
                 db.close();
             };
             _version++;
+            }
         }
-        if (!_osnames.contains(snames[2])) {
-            let _sname3 = snames[2];
-            let DBreq3 = window.indexedDB.open(DBname, 3);
-            DBreq3.onupgradeneeded = function() {
-                db = DBreq3.result;
-                db.onerror = function(ee) {
-                    alert("IndexedDB - onupgradeneeded - " + ee.target.errorCode);
+        if (osAnz > 2) {
+            if (!_osnames.contains(snames[2])) {
+                let _sname3 = snames[2];
+                let DBreq3 = window.indexedDB.open(DBname, 3);
+                DBreq3.onupgradeneeded = function() {
+                    db = DBreq3.result;
+                    db.onerror = function(ee) {
+                        alert("IndexedDB - onupgradeneeded - " + ee.target.errorCode);
+                    };
+                    db.createObjectStore(_sname3, {keyPath: "storeID"});
                 };
-                db.createObjectStore(_sname3, {keyPath: "storeID"});
-            };
-            DBreq3.onsuccess = function() {
-                db = DBreq3.result;
-                db.close();
-            };
-            _version++;
+                DBreq3.onsuccess = function() {
+                    db = DBreq3.result;
+                    db.close();
+                };
+                _version++;
+            }
+        }
+        if (osAnz > 3) {
+            if (!_osnames.contains(snames[3])) {
+                let _sname4 = snames[3];
+                let DBreq4 = window.indexedDB.open(DBname, 4);
+                DBreq4.onupgradeneeded = function() {
+                    db = DBreq4.result;
+                    db.onerror = function(ee) {
+                        alert("IndexedDB - onupgradeneeded - " + ee.target.errorCode);
+                    };
+                    db.createObjectStore(_sname4, {keyPath: "storeID"});
+                };
+                DBreq4.onsuccess = function() {
+                    db = DBreq4.result;
+                    db.close();
+                };
+                _version++;
+            }
         }
     });
 }
@@ -187,6 +210,191 @@ function showSnames(DBname, sname) {
                 db.close();
                 resolve({ "version": version, 
                         "osnames": osnames });
+        };
+    });
+}
+
+export function closeModalIDB()
+{
+    document.querySelector("#overlay").style.display = "none";
+    let ovHTML = gui.FILE_MODAL();
+    let OVelmnt = document.getElementById("overlay");
+    OVelmnt.innerHTML = ovHTML;
+}
+
+export function showIDBstate() {
+    let ovHTML = gui.IDB_INDEX();
+    let OVelmnt = document.getElementById("overlay");
+    OVelmnt.innerHTML = ovHTML;
+    const _liHead = document.getElementById("idbstores");
+    _liHead.innerHTML = "";
+
+    d3.select("#overlay").on("click", function(event) {
+        closeModalIDB(event);
+    });
+
+    // read IDB step by step -> because of promise/resolve it is not possible to display the whole stock in one go.
+    let db;
+    const mkeyList = new Map();
+    const DB = new Promise((resolve, reject) => {
+        const request = indexedDB.open("wtTAM");
+        request.onsuccess = () => resolve(request.result);
+    });
+    const idbSlist = new Promise((resolve, reject) => {
+        DB.then(idb => {
+            db = idb;
+            let dbos = idb.objectStoreNames;
+            let _dbos = Array.from(dbos);
+            resolve(_dbos);
+        });
+    });
+    // display the stores - we won't need "Gedcom"
+    idbSlist.then(snames => {
+        snames.forEach(sname => {
+            if(sname != "Gedcom") {
+                const liItem = document.createElement("li");
+                liItem.classList = 'ulli';
+                _liHead.appendChild(liItem);
+                const param = document.createElement("p");
+                param.innerHTML = i18n("idb_" + sname);
+                liItem.appendChild(param);
+                const showButton = document.createElement('button');
+                liItem.appendChild(showButton);
+                showButton.innerHTML = '>';
+                showButton.title = i18n('idb_clickStore');
+                // here we are setting a data attribute on our show button to say what task we want shown if it is clicked!
+                showButton.setAttribute('key-task', sname);
+                showButton.onclick = function(event) {
+                    showIDBkeys(event);
+                };
+                // liItem itself will do nothing
+                liItem.onclick = function(event) {
+                    event.stopPropagation();
+                };
+            }
+        });
+        document.querySelector("#overlay").style.display = "inline";
+    });
+}
+
+function showIDBkeys(event) {
+    let actNodeE = event.target;
+    let actNode = actNodeE.parentNode;
+    let sname = event.target.getAttribute("key-task");
+    event.stopPropagation();
+    let db;
+    const DB = new Promise((resolve, reject) => {
+        const request = indexedDB.open("wtTAM");
+        request.onsuccess = () => {
+            db = request.result;
+            parms.oSET("IDBdb", db);
+            showIDBkeysL(actNode, db, sname, actNodeE);
+            resolve(db);
+        };
+    });
+}
+
+function showIDBkeysL(actNode, db, sname, actNodeE) {
+    const DBtactn = new Promise((res, rej) => {
+        let taction = db.transaction(sname, "readonly");
+        let ostore = taction.objectStore(sname);
+        let req = ostore.openCursor();
+
+        let _keyList = [];
+        req.onsuccess = function(e) {
+            let curs = e.target.result;
+            if (curs) {
+                let _key = curs.primaryKey;
+                _keyList.push(_key);
+                curs.continue();
+            } else {
+                showIDBkeysLdo(actNode, sname, _keyList, actNodeE);
+            }
+        };
+        req.oncomplete = (ev) => {
+            res(_keyList);
+        };
+        req.onerror = (ev) => {
+            rej(ev);
+        };
+    });
+}
+
+function showIDBkeysLdo(actNode, sname, keyList, actNodeE) {
+    const oliHead = document.createElement("ol");
+    if (keyList.length > 0) {
+        keyList.forEach( idbKey => {
+            const oliItem = document.createElement("li");
+            // oliItem.innerHTML = ':';
+            oliItem.classList = 'olli';
+            oliHead.appendChild(oliItem);
+            oliItem.title = i18n('idb_clickItem');
+            const param = document.createElement("p");
+            param.innerHTML = idbKey;
+            oliItem.appendChild(param);
+            // here we are setting a data attribute on our param to say what task we want done if it is clicked!
+            param.setAttribute('show-task', sname+'|'+idbKey);
+            param.onclick = function(event) {
+                loadIDBkey(event);
+            };
+            const delButton = document.createElement('button');
+            oliItem.appendChild(delButton);
+            delButton.innerHTML = i18n('idb_delFlag');
+            delButton.title = i18n('idb_delItem');
+            // here we are setting a data attribute on our del button to say what task we want done if it is clicked!
+            delButton.setAttribute('del-task', sname+'|'+idbKey);
+            delButton.onclick = function(event) {
+                delIDBkey(event);
+            };
+        });
+    } else {
+        const param = document.createElement("p");
+        // oliItem.innerHTML = ':';
+        oliHead.appendChild(param);
+        param.innerHTML = i18n('idb_noEntries');
+    }
+    actNode.appendChild(oliHead);
+    actNodeE.innerHTML = '';       // show button will be set inactiv
+    actNodeE.onclick = function(event) {
+        event.stopPropagation();
+    };
+}
+
+function loadIDBkey(event) {
+    let actNodeE = event.target;
+    let dstring = event.target.getAttribute("show-task");
+    event.stopPropagation();
+    closeModalIDB();
+    let dstrings = dstring.split("|");
+    let db = parms.oGET("IDBdb");
+    let dbName = db.name;
+    let dbStore = dstrings[0];
+    let dbKey = dstrings[1];
+    loadDataFromIDB(dbName, dbStore, dbKey);
+}
+
+function delIDBkey(event) {
+    let delem = event.target;                       // this element has been clicked
+    let delemP = delem.parentNode;                  // this element will be removed on success
+    let delemGP = delemP.parentNode;                      // ... and its parent will be checked if empty
+    let dstring = delem.getAttribute("del-task");
+    event.stopPropagation();
+    let dstrings = dstring.split("|");
+    let dbStore = dstrings[0];
+    let dbKey = dstrings[1];
+    let db = parms.oGET("IDBdb");
+    const DBtactn = new Promise((res, rej) => {
+        let taction = db.transaction(dbStore, "readwrite");
+        let ostore = taction.objectStore(dbStore);
+        let req = ostore.delete(dbKey);
+        req.onsuccess = function(e) {
+            delemP.remove();
+            if (delemGP.children.length == 0) {
+                delemGP.innerHTML = i18n('idb_noEntries');
+            }
+        };
+        req.onerror = (ev) => {
+            rej(ev);
         };
     });
 }

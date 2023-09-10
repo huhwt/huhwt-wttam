@@ -20,7 +20,7 @@ import { TAMRenderer, setRange } from "./TAMrenderer.js";
 // import { default as i18n } from "./i18n.js";
 import { vec, distance, isNumber, cleanDOM } from "./utils.js";
 import { resetSVGLayers } from "./interfaces.js";
-import { initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js"; 
+import { showSVG, initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js"; 
 import * as parms from "./parms.js";
 import { TopoMap, NormalField, GradientField } from "./scalarfield.js";
 import { timestamp } from './utils.js';
@@ -67,6 +67,7 @@ export class TFMRenderer extends TAMRenderer
         this.RENDERtype = 1;
 
         this.svgKENN = 'TFM';
+        this.SIMmode = 'TREE';
 
         this.isInitialized = false;
 
@@ -266,10 +267,14 @@ export class TFMRenderer extends TAMRenderer
             .force("link", objRef.LINK_FORCE)
             .velocityDecay(parms.GET("FRICTION"))
             .alpha(parms.GET("ALPHA"))
-            .alphaDecay(0)
+            // .alphaDecay(0)
+            .alphaTarget(0.05)
             .on("tick", function tick() { objRef.tick(objRef); })
             .on("end", function update() { objRef.updateScalarField(objRef); })
             ;
+
+        let _aT = objRef.FORCE_SIMULATION.alphaTarget();
+        parms.SET("ALPHA_target", _aT);
 
         if (!parms.GET("ENERGIZE")) // this parameter may be loaded from an exported save file
             objRef.FORCE_SIMULATION.alpha(0); // stop simulation
@@ -347,23 +352,26 @@ export class TFMRenderer extends TAMRenderer
         this.adjustCanvas(objRef);
         // ("Interactions Initialized.");
         console.log(i18n("Int_i"));
+
+        showSVG(objRef);
     }
 
     initSVGLayers(objRef)
     {
-        let sKenn = objRef.svgKENN;
-        let the_canvas = d3.selectAll("#s" + sKenn);
-        let the_svg_g = the_canvas.select("g");
-        let _has_g = the_svg_g.node();
-        if ( _has_g ) {
-            objRef.CANVAS = the_svg_g;
-            resetSVGLayers(objRef);
-        } else {
-            objRef.CANVAS = d3.select("#s" + sKenn).append("g");
-        }
-        objRef.TOPO_LAYER = objRef.CANVAS.append("g").attr("id", "topolayer" + sKenn);
-        objRef.SHADING_LAYER = objRef.CANVAS.append("g").attr("id", "shadinglayer" + sKenn);
-        objRef.GRAPH_LAYER = objRef.CANVAS.append("g").attr("id", "graphlayer" + sKenn);
+        super.initSVGLayers(objRef);
+    //     let sKenn = objRef.svgKENN;
+    //     let the_canvas = d3.selectAll("#s" + sKenn);
+    //     let the_svg_g = the_canvas.select("g");
+    //     let _has_g = the_svg_g.node();
+    //     if ( _has_g ) {
+    //         objRef.CANVAS = the_svg_g;
+    //         resetSVGLayers(objRef);
+    //     } else {
+    //         objRef.CANVAS = d3.select("#s" + sKenn).append("g");
+    //     }
+    //     objRef.TOPO_LAYER = objRef.CANVAS.append("g").attr("id", "topolayer" + sKenn);
+    //     objRef.SHADING_LAYER = objRef.CANVAS.append("g").attr("id", "shadinglayer" + sKenn);
+    //     objRef.GRAPH_LAYER = objRef.CANVAS.append("g").attr("id", "graphlayer" + sKenn);
     // objRef.BULLS_EYE = objRef.CANVAS.select("#bullseye").append("g");
     }
     
@@ -572,6 +580,9 @@ export class TFMRenderer extends TAMRenderer
             this.SVG_NODE_LABELS.attr("transform", this.placeLabelP);
             this.SVG_FAMILY_LABELS.attr("transform", this.placeLabel);
         }
+
+        objRef.showALPHA(objRef);
+
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

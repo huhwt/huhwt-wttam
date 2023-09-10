@@ -17,7 +17,7 @@ import { createDownloadFromBlob, getParameters, getMetadata, dumpGRAPH } from ".
 import { TAMRenderer, setRange } from "./TAMrenderer.js";
 // import { default as i18n } from "./i18n.js";
 import { vec, distance, isNumber } from "./utils.js";
-import { initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js";
+import { showSVG, initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js";
 import * as parms from "./parms.js";
 import { TopoMap, NormalField, GradientField } from "./scalarfield.js";
 import { timestamp } from './utils.js';
@@ -55,6 +55,8 @@ export class TAHRenderer extends TAMRenderer
         this.RENDERtype = 2;
 
         this.svgKENN = 'TAM';
+        this.SIMmode = 'TREE';
+        this.Htreed = 2;
 
         this.isInitialized = false;
 
@@ -66,6 +68,9 @@ export class TAHRenderer extends TAMRenderer
 
     createPersonForceGraph(dataset)
     {
+        parms.SET('ENERGIZE', false);
+        parms.SET('FREEZED', true);
+
         let objRef = this;
 
         let _colordim = parms.H_gen;
@@ -141,10 +146,14 @@ export class TAHRenderer extends TAMRenderer
             .force("collision", d3.forceCollide().radius(function(d){ return 3 * d.r; }))
             .velocityDecay(parms.GET("FRICTION"))        // friction since d3.v4
             .alpha(0)
+            .alphaTarget(null)
             .alphaDecay(0)
             .on("tick", function tick() { objRef.tick(objRef); })
             .on("end", function update() { objRef.updateScalarField(objRef); })
             ;
+
+        let _aT = objRef.FORCE_SIMULATION.alphaTarget();
+        parms.SET("ALPHA_target", _aT);
 
         if (!parms.GET("ENERGIZE")) // this parameter may be loaded from an exported save file
             objRef.FORCE_SIMULATION.alpha(0); // stop simulation
@@ -201,21 +210,24 @@ export class TAHRenderer extends TAMRenderer
         this.adjustCanvas(objRef);
         // ("Interactions Initialized.");
         console.log(i18n("Int_i"));
+
+        showSVG(objRef);
     }
 
     initSVGLayers(objRef)
     {
-        let the_canvas = d3.selectAll("#sTAM");
-        let the_svg_g = the_canvas.select("g");
-        let _has_g = the_svg_g.node();
-        if ( _has_g ) {
-            objRef.CANVAS = the_svg_g;
-        } else {
-            objRef.CANVAS = d3.select("#sTAM").append("g");
-        }
-        objRef.TOPO_LAYER = objRef.CANVAS.append("g").attr("id", "topolayer");
-        objRef.SHADING_LAYER = objRef.CANVAS.append("g").attr("id", "shadinglayer");
-        objRef.GRAPH_LAYER = objRef.CANVAS.append("g").attr("id", "graphlayer");
+        super.initSVGLayers(objRef);
+    //     let the_canvas = d3.selectAll("#sTAM");
+    //     let the_svg_g = the_canvas.select("g");
+    //     let _has_g = the_svg_g.node();
+    //     if ( _has_g ) {
+    //         objRef.CANVAS = the_svg_g;
+    //     } else {
+    //         objRef.CANVAS = d3.select("#sTAM").append("g");
+    //     }
+    //     objRef.TOPO_LAYER = objRef.CANVAS.append("g").attr("id", "topolayer");
+    //     objRef.SHADING_LAYER = objRef.CANVAS.append("g").attr("id", "shadinglayer");
+    //     objRef.GRAPH_LAYER = objRef.CANVAS.append("g").attr("id", "graphlayer");
         // objRef.BULLS_EYE = objRef.CANVAS.select("#bullseye").append("g");
     }
     
@@ -407,8 +419,7 @@ export class TAHRenderer extends TAMRenderer
     {
         // store person/family node positions with their id
         let nodePositions = {};
-        this.PNODES.forEach(p => { nodePositions[p.id] = {"x": p.x, "y": p.y, "fixed": p.fx != null}; });
-        this.FNODES.forEach(f => { nodePositions[f.id] = {"x": f.x, "y": f.y, "fixed": f.fx != null}; });
+        this.NODES.forEach(p => { nodePositions[p.id] = {"x": p.x, "y": p.y, "fixed": p.fx != null}; });
 
         let content = [JSON.stringify(
             {
@@ -428,22 +439,32 @@ export class TAHRenderer extends TAMRenderer
 
     saveData()
     {
-        let _primName = d.givenname + '/' + d.surname + '/';
-        let idb_key = _primName + "-" + _primID;
+        // store person node positions with their id
+        let nodePositions = {};
+        this.NODES.forEach(p => { nodePositions[p.id] = {"x": p.x, "y": p.y, "fixed": p.fx != null}; });
+
+        let links = [];
+        this.LINKS.forEach(l => { links.push({"source": l.source.id, "target": l.target.id, "directed": l.directed}); })
+
+        let _d = this.NODES[0];
+        let _primID = _d.id;
+        let _primName = _d.gname + '/' + _d.sname + '/';
+        let idb_key = 'TAH-' + _primName + "-" + _primID;
         let dataset = 
-            {   "TFMdata": [
+            {   "H_Tree": [
                     {
                         "storeID": idb_key,
                         "primID": _primID,
                         "timestamp": timestamp(),
-                        "metadata": getMetadata(' - TFM'),
+                        "metadata": getMetadata(' - H-TREE'),
                         "parameters": getParameters(),
                         "nodePositions": nodePositions,
-                        "nodeData": this.GRAPH_DATA
+                        "nodes": this.NODES,
+                        "links": links,
                     }
                 ]
             };
-        putDB("wtTAM","TFMdata", dataset.H_tree);
+        putDB("wtTAM","H-Tree", dataset.H_Tree);
     
     }
 }

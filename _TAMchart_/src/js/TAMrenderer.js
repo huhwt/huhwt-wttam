@@ -18,7 +18,7 @@ import { createDownloadFromBlob, removeInternalValuesFromJSON, getParameters, ge
 import { vec, brighten, darken, distance, jiggle, isNumber } from "./utils.js";
 import * as parms from "./parms.js";
 import { resetSVGLayers } from "./interfaces.js";
-import { initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js";
+import { showSVG, initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js";
 import { TopoMap, NormalField, GradientField } from "./scalarfield.js";
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,6 +79,7 @@ export class TAMRenderer
     constructor()
     {
         // Graphic Layers
+        this.SVG = null;
         this.CANVAS = null;
         this.TOPO_LAYER = null;
         this.SHADING_LAYER = null;
@@ -125,8 +126,15 @@ export class TAMRenderer
         this.zoomO = null;
 
         this.svgKENN = 'TAM';
+        this.SIMmode = 'TREE';
 
         this.isInitialized = false;
+
+        this.s_transform = {k: 1, x: 0, y:0};
+
+        parms.SET('FREEZED', false);
+
+
     }
 
     reset() {
@@ -236,10 +244,14 @@ export class TAMRenderer
             .force("collision", d3.forceCollide().radius(function(d){ return 3 * d.r; }))
             .velocityDecay(parms.GET("FRICTION"))        // friction since d3.v4
             .alpha(parms.GET("ALPHA"))
+            .alphaTarget(null)
             .alphaDecay(0)
             .on("tick", function tick() { objRef.tick(objRef); })
             .on("end", function update() { objRef.updateScalarField(objRef); })
             ;
+
+        let _aT = objRef.FORCE_SIMULATION.alphaTarget();
+        parms.SET("ALPHA_target", _aT);
 
         if (!parms.GET("ENERGIZE")) // this parameter may be loaded from an exported save file
             objRef.FORCE_SIMULATION.alpha(0); // stop simulation
@@ -289,6 +301,8 @@ export class TAMRenderer
         this.adjustCanvas(objRef);
         // ("Interactions Initialized.");
         console.log(i18n("Int_i"));
+
+        showSVG(objRef);
     }
 
 
@@ -436,6 +450,8 @@ export class TAMRenderer
         // set labels
         if (parms.GET("SHOW_NAMES"))
             this.SVG_NODE_LABELS.attr("transform", this.placeLabel);
+
+        objRef.showALPHA(objRef);
     }
 
 
@@ -1012,6 +1028,51 @@ export class TAMRenderer
     saveData()
     {
         return;
+    }
+
+    showALPHA(objRef) {
+        let _aF = objRef.FORCE_SIMULATION.alpha();
+        d3.select('#alpha_value').text(_aF*100);
+        d3.select('#alpha_value_bar').style('flex-basis', (_aF*100) + '%');
+    }
+
+    setvbDim(_vbdim) {
+        // viewbox-Einstellungen umsetzen
+        let _vbd_old = parms.GET("viewboxdim");                                    // aktive viewbox Kennung
+        // abschalten
+        let _vbval = parms.VIEW_PORT_DIMS[_vbd_old];                                // ... dazu Werte
+        let _blfd = _vbval[0];                                                      //     ... zugeordneter Button
+        let _vb_active = document.getElementsByClassName("vbutton__" + _blfd)[0];   //         ... auslesen
+        let _vb_act_cl = _vb_active.classList;                                      //             Classlist ...
+        if ( _vb_act_cl.contains('vb_active') )                                     //             auf aktiv prüfen
+            _vb_act_cl.toggle('vb_active');                                         //             fallweise abschalten
+
+        parms.SET("viewboxdim", _vbdim);                                           // neue Kennung speichern
+        this.viewboxdim = _vbdim;
+
+        // anschalten
+        _vbval = parms.VIEW_PORT_DIMS[_vbdim];                                      // ... dazu Werte
+        _blfd = _vbval[0];                                                          //     ... zugeordneter Button
+        _vb_active = document.getElementsByClassName("vbutton__" + _blfd)[0];       //         ... Button auslesen
+        _vb_act_cl = _vb_active.classList;                                          //             Classlist ...
+        if ( !_vb_act_cl.contains('vb_active') )                                    //             auf aktiv prüfen
+            _vb_act_cl.toggle('vb_active');                                         //             fallweise anschalten
+
+        this.setvbDim_Do(_vbdim, _vbval);
+    }
+
+    setvbDim_Do(_vbdim, _vbval) {
+        let _vbX0 = _vbval[1];                                                          //      ... und sonstige Angaben
+        let _vbY0 = _vbval[2];
+        let _vbWidth = _vbval[3];
+        let _vbHeight = _vbval[4];
+        let viewBoxValue = _vbX0 + " " + _vbY0 + " " + _vbWidth + " " + _vbHeight;
+
+        // viewbox-Einstellungen ins DOM einspielen
+        let sKENN = "s" + this.svgKENN;
+        let _theSVG = document.getElementById(sKENN);
+        _theSVG.setAttribute('viewBox', viewBoxValue);
+        _theSVG.setAttribute('vbdim', _vbdim);
     }
 
 }

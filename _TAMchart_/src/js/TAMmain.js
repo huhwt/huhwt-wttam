@@ -70,6 +70,11 @@ function prep_action() {
     let tcHTML = TICKCOUNTER_html();
     let TCelmnt = document.getElementById("tickcountInfo");
     TCelmnt.innerHTML = tcHTML;
+    let ctHTML = gui.CONTROLS_html();
+    // may not be defined -> H-Tree
+    let FIelmnt = document.getElementById("forceInfo");
+    if ( FIelmnt )
+        FIelmnt.innerHTML = ctHTML;
 }
 
 //# sourceMappingURL=/dist/tamv6.js.map

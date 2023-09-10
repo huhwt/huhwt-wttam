@@ -16,7 +16,7 @@ import { TAHRenderer } from "./TAHrenderer.js";
 import { loadGedcom, estimateMissingDates, processGedcom } from "./gedcom.js";
 // import { default as i18n } from "./i18n.js";
 import * as parms from "./parms.js";
-import { toggleSVG, set_tamDefaultParameters } from "./interaction.js";
+import { showSVG, set_tamDefaultParameters } from "./interaction.js";
 import { getDB, readFromDB } from "./dbman.js";
 import { getBaseURL, getBaseREF } from "./utils.js";
 
@@ -55,7 +55,7 @@ function readSingleFile(e)
     let reader = new FileReader();
     let renderer = parms.oGET("RENDERER");
     let _rendertype = renderer.RENDERtype;
-    let isTFMRenderer = (_rendertype == RENDERtype.TFMRenderer);
+    let isTFMRenderer = (_rendertype == RENDERtype.TFMrenderer);
     let renderer_new = false;
     if (renderer) {
         let objRef = renderer.instance;
@@ -81,18 +81,16 @@ function readSingleFile(e)
 
         if (renderer) {
             renderer.FORCE_SIMULATION.stop();
-            toggleSVG(renderer);
+            showSVG(renderer, false);
             resetSVGLayers(renderer);
         }
 
         if (file.name.endsWith(".json") || file.name.endsWith(".tam")) {
             if (_rendertype !== RENDERtype.TAMrenderer) {
                 renderer = new TAMRenderer();
-                toggleSVG(renderer);
                 renderer_new = true;
                 parms.oSET("RENDERER", renderer);
             } else {
-                toggleSVG(renderer);
                 renderer.NODES = [];
                 renderer.LINKS = [];
             }
@@ -109,12 +107,10 @@ function readSingleFile(e)
 
             if (_rendertype !== RENDERtype.TFMrenderer) {
                 renderer = new TFMRenderer();
-                toggleSVG(renderer);
                 renderer_new = true;
                 parms.oSET("RENDERER", renderer);
             } else {
                 let objRef = renderer.instance;
-                toggleSVG(renderer);
                 resetTFM(objRef);
             }
             set_tamDefaultParameters();
@@ -133,12 +129,10 @@ function readSingleFile(e)
 
             if (_rendertype !== RENDERtype.TFMrenderer) {
                 renderer = new TFMRenderer();
-                toggleSVG(renderer);
                 renderer_new = true;
                 parms.oSET("RENDERER", renderer);
             } else {
                 let objRef = renderer.instance;
-                toggleSVG(renderer);
                 resetTFM(renderer);
             }
 
@@ -182,6 +176,12 @@ export function onChangeFile(event)
 
     readSingleFile(event);
 }
+// EW.H MOD - ... we want to load the content anyway, even when file has not changed ...
+export function onClickFile(event)
+{
+    var fileinput = document.getElementById("browse");
+    fileinput.value = null;         // this will force onChangeFile
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -194,7 +194,7 @@ export function loadFileFromDisk(folder)
     parms.SET("SOURCE_FILE", _fileName);
     let renderer = parms.oGET("RENDERER");
     if (renderer) {
-        toggleSVG(renderer);
+        showSVG(renderer, false);
         let objRef = renderer.instance;
         objRef.SVG_DRAGABLE_ELEMENTS
             .on("mouseover", null)
@@ -214,7 +214,6 @@ export function loadFileFromDisk(folder)
     {
         if (_rendertype !== RENDERtype.TAMrenderer) {
             renderer = new TAMRenderer();
-            toggleSVG(renderer);
             renderer_new = true;
             parms.oSET("RENDERER", renderer);
         }
@@ -230,7 +229,6 @@ export function loadFileFromDisk(folder)
     {
         if (_rendertype !== RENDERtype.TFMrenderer) {
             renderer = new TFMRenderer();
-            toggleSVG(renderer);
             renderer_new = true;
             parms.oSET("RENDERER", renderer);
         }
@@ -251,7 +249,6 @@ export function loadFileFromDisk(folder)
     {
         if (_rendertype !== RENDERtype.TFMrenderer) {
             renderer = new TFMRenderer();
-            toggleSVG(renderer);
             renderer_new = true;
             parms.oSET("RENDERER", renderer);
         }
@@ -274,7 +271,7 @@ export function loadDataFromIDB(dbName, storeName, key) {
     //     return;
     let renderer = parms.oGET("RENDERER");
     if (renderer) {
-        toggleSVG(renderer);
+        showSVG(renderer, false);
         let objRef = renderer.instance;
         objRef.SVG_DRAGABLE_ELEMENTS
             .on("mouseover", null)
@@ -282,20 +279,16 @@ export function loadDataFromIDB(dbName, storeName, key) {
             .on("mousemove", null)
             .on("mouseout", null)
             ;
-    } else {
-        renderer = new TFMRenderer();
+        renderer.FORCE_SIMULATION.stop();
+        renderer.reset();
+        resetSVGLayers(renderer);
+        renderer = null;
     }
-    let _rendertype = renderer.RENDERtype;
-    let renderer_new = false;
 
     if ( storeName == "H-Tree")
     {
-        if (_rendertype !== RENDERtype.TAHrenderer) {
             renderer = new TAHRenderer();
-            toggleSVG(renderer);
-            renderer_new = true;
             parms.oSET("RENDERER", renderer);
-        }
 
         const dbaction = readFromDB(dbName, storeName, key);
         dbaction.then( value => { 
@@ -319,13 +312,7 @@ export function loadDataFromIDB(dbName, storeName, key) {
 
     if ( storeName == "TFMdata")
     {
-        if (_rendertype == RENDERtype.TFMrenderer) {
-            renderer = null;
-        }
-
         renderer = new TFMRenderer();
-        toggleSVG(renderer);
-        renderer_new = true;
         parms.oSET("RENDERER", renderer);
 
         const dbaction = readFromDB(dbName, storeName, key);
@@ -350,13 +337,7 @@ export function loadDataFromIDB(dbName, storeName, key) {
 
     if ( storeName == "Gedcom")
     {
-        if (_rendertype == RENDERtype.TFMrenderer) {
-            renderer = null;
-        }
-
         renderer = new TFMRenderer();
-        toggleSVG(renderer);
-        renderer_new = true;
         parms.oSET("RENDERER", renderer);
 
         const dbaction = readFromDB(dbName, storeName, key);
@@ -401,6 +382,9 @@ function processIDBH(dataset)
         set_tamDefaultParameters();
     }
     let renderer = parms.oGET("RENDERER");
+    let objRef = renderer.instance;
+    renderer.reset();
+    renderer.initSVGLayers(objRef);
     renderer.createPersonForceGraph(dataset);
 }
 
@@ -415,6 +399,7 @@ function processIDBtfm(dataset)
         set_tamDefaultParameters();
     }
     let gedcom = dataset.nodeData;
+    processFILENAME(dataset.storeID);
     processGedcom(gedcom, function(gedcom, text) {
         estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
         let renderer = parms.oGET("RENDERER");

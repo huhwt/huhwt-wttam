@@ -1,7 +1,8 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
-
 ![webtrees major version](https://img.shields.io/badge/webtrees-v2.1-green)
+
 ![Latest Release](https://img.shields.io/github/v/release/huhwt/huhwt-wttam)
+[![Downloads](https://img.shields.io/github/downloads/huhwt/huhwt-wttam/total)]()
 
 This [webtrees](https://www.webtrees.net/) module hosts TAM -Topographic Attribute Maps-, a node-link diagram overlaid with temporal information.
 
@@ -30,6 +31,10 @@ The PHP part of this module manages the transfer of data from the web server (st
 
 The actual TAM functions are encapsulated in their own directory tree and therefore have no contact with the PHP components.
 
+[TODO]
+
+Recent translations into Catalan and Spanish have indicated that the user interface needs an overhaul - message texts are truncated and shortcuts are not properly embedded. Localization is bloody exhausting.
+
 <a name="requirements"></a>
 ## Requirements 
 
@@ -56,9 +61,7 @@ For the latest version, simply replace the existing huhwt-wttam files with those
 You can help translate this module. The po/mo system is used in the PHP part. The Javascript components have their own independent i18n implementation. The texts are represented by key/value assignments, the content can be found in 'translations.js'.
 Updated translations will be distributed with the next release of the module.
 
-So far there is only English, German and Dutch.
-
-Special thanks to TheDutchJewel for the translation into Dutch.
+So far there has been English, German, Dutch, Catalan and Spanish.
 
 <a name="support"></a>
 ## support
@@ -69,6 +72,9 @@ Special thanks to TheDutchJewel for the translation into Dutch.
 ## Thanks
 
 Special thanks are due to R.Preiner and his team at the University of Graz, who published the procedure in his repository https://github.com/rpreiner/tam.
+
+* **Translation NL** : [TheDutchJewel](https://github.com/TheDutchJewel)
+* **Translation CA/ES** [Bernatbanyuls](https://github.com/BernatBanyuls)
 
 <a name="license"></a>
 ## License

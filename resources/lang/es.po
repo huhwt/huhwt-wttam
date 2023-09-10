@@ -1,0 +1,29 @@
+msgid "back to ClippingsCart-Show"
+msgstr "Volver a recortes de cartas"
+
+msgid "Please wait - transfer in progress"
+msgstr "Por favor, espere -Transferencia en curso-"
+
+msgid "Start TAM in new tab"
+msgstr "Iniciar TAM en una nueva pestaña"
+
+msgid "Transfer completed"
+msgstr "Transferencia completada"
+
+msgid "TAM Launch"
+msgstr "Lanzamiento de TAM"
+
+msgid "Key to retrieve data"
+msgstr "Clave para recuperar datos"
+
+msgid "IDB key"
+msgstr "Clave IDB"
+
+msgid "Clippings identifier"
+msgstr "Identificador de recortes"
+
+msgid "(Own identifier)"
+msgstr "(Identificador propio)"
+
+msgid "Optional: Set own identifier"
+msgstr "Opcional: Establecer identificador propio"

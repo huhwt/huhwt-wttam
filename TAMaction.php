@@ -63,7 +63,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.1.12.0';
+        return '2.1.17.3';
     }
 
     /**
@@ -73,7 +73,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleLatestVersionUrl(): string {
-        return 'https://github.com/huhwt/huhwt-wttam/master/latest-version.txt';
+        return 'https://github.com/huhwt/huhwt-wttam/blob/master/latest-version.txt';
     }
 
     /**
@@ -210,7 +210,7 @@ class TAMaction extends AbstractModule
 
         // the path to TAM-subsystem - pure javascript, no php
         $TAMpath = e(asset('snip/'));
-        $TAMpath = str_replace("/public/snip/", "", $TAMpath) . "/modules_v4/huhwt-wttam/_TAMchart_/index-dev.html";
+        $TAMpath = str_replace("/public/snip/", "", $TAMpath) . "/modules_v4/huhwt-wttam/_TAMchart_/index.html";
 
         $TAMdname = Session::get('VIZ_DSname');
         $TAMdname = str_replace("VIZ", "TAM", $TAMdname);

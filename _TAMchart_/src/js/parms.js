@@ -15,6 +15,18 @@
 
 export const InterpolationType = {'MIN': 1, 'AVG': 2, 'MAX': 3};
 export const Sex = {'MALE': 1, 'FEMALE': 2};
+
+// -> PARMS viewboxdim
+//          lfd   X-0    Y-0  Width Height
+export const VIEW_PORT_DIMS = {
+    '2x2': ['1', -1000, -533, 2000, 2000],
+    '4x4': ['2', -2000, -1066, 4000, 4000],
+    '6x6': ['3', -3000, -1600, 6000, 6000],
+    '9x9': ['4', -4500, -2400, 9000, 9000],
+    '12x12': ['5', -6000, -3200, 12000, 12000]
+};
+export const ZOOMfactor = 1.1486983549970351;
+
 const NODE_RADIUS = 10;
 
 const PARMSarr = [
@@ -22,8 +34,10 @@ const PARMSarr = [
     [ "FILENAME" , ""],
     [ "SOURCE_FILE" , ""],
     // Save
+
     // Interaction
     [ "ENERGIZE" , true],
+    [ "FREEZED" , false],                               // Simulation ist im Standard eingefroren (H-Tree)
     [ "USE_MOUSEOVER" , false],
     [ "SHOW_YEARVALUES" , false],
     [ "SHOW_TOOLTIPS" , true],
@@ -69,6 +83,8 @@ const PARMSarr = [
     // Others
 
     [ "ALPHA" , 0.5],                       // internal use only
+    [ "ALPHA_T" , 1.0],                       // internal use only
+    [ "ALPHA_x" , 0.5],                       // internal use only
     [ "SF_INTERPOLATION_TYPE" , InterpolationType.MIN],
 
     [ "FONT_SIZE" , 20],
@@ -92,6 +108,8 @@ const PARMSarr = [
     [ "PROCREATION_AGE" , 25],
     [ "STATE", ""],
 
+    // viewboxdim - 0.. ..4 - 2x2...4x4...6x6...8x8...10x10 - viewport dimensions
+    [ "viewboxdim", '6x6']
 ];
 
 const PARMS = new Map(PARMSarr);
