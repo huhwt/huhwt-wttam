@@ -30,6 +30,8 @@ class Person
         this.ddate = null;
         
         this.families = [];     // list of families this person belongs to
+
+        this.snotes = [];       // list of (s)notes assigned to this person
     }
 
     getFullName()
@@ -102,17 +104,54 @@ export function loadGedcom(url, callback)
 }
 
 
-export function processGedcom(text, callback)
+export function processGedcom(text, info_data, callback)
 {
     var gedcom = {
-        "persons" : new Map(),
-        "families" : new Map()
     };
 
     let lines = text.split("\n");
 
     gedcom = build_gedcom(lines);
-        
+
+    // info_data:
+    // - Nxrefs     -> key: sNOTE-id, value: TAGtext
+    // - txtNotes   -> key: NOTEtext, value: sNOTE-id
+
+    if (info_data) {
+        if( info_data.Nxrefs ) {
+            let _notes = new Map();
+            let Nxrefs = info_data.Nxrefs;
+            for(const [nxref, ntext] of Object.entries(Nxrefs))
+            {
+                let _xref = '@' + nxref + '@';
+                _notes.set(_xref, ntext);
+            }
+            // gedcom.snotes = _notes;
+            gedcom.persons.forEach(p =>
+            {
+                if ( p.snotes.length > 0 ) {
+                    let _snotes = [];
+                    for(let i=0; i < p.snotes.length; i++) {
+                        let nk = p.snotes[i];
+                        if ( _notes.has(nk)) {
+                            _snotes.push(_notes.get(nk));
+                        }
+                    }
+                    p.snotes = _snotes;
+                }
+            });
+            gedcom.families.forEach(f =>
+                {
+                    if ( f.snotes.length > 0 ) {
+                        for(let i=0; i < f.snotes.length; i++) {
+                            let nk = f.snotes[i];
+                            f.snotes[i] = _notes.get(nk);
+                        }
+                    }
+            });
+        }
+    }
+
     // ("Loaded " + gedcom.persons.size + " persons in " + gedcom.families.size + " families");
     console.log(i18n("L_Xp_Xf", { nP: gedcom.persons.size, nF: gedcom.families.size } ));
     callback(gedcom, text);
@@ -142,6 +181,7 @@ function build_gedcom(lines)
                 let id = tokens[1].toString();
                 current_pers = new Person(id, null, null, null, 0, 0);
                 gedcom.persons.set(id, current_pers);
+                current_fam = null;
             }
             else if (nodeType == "FAM")
             {
@@ -150,9 +190,11 @@ function build_gedcom(lines)
                     husband : null,
                     wife : null,
                     mdate : null,
-                    children : []
+                    children : [],
+                    snotes: []
                 };
                 gedcom.families.set(id, current_fam);
+                current_pers = null;
             }
             else
             {
@@ -232,6 +274,19 @@ function build_gedcom(lines)
                 // create bidirectional link between family and person
                 person.families.push(current_fam);
                 current_fam.children.push(person);
+            }
+            //-------------------------- encounterd while parsing PERSONS as well as FAMILIES
+            else if (nodeType == "NOTE")
+            {
+                let id = tokens[2].trim();
+                if ( !(id.indexOf('@') < 0)) {
+                    if ( current_pers ) {
+                        current_pers.snotes.push(id);
+                    }
+                    if ( current_fam ) {
+                        current_fam.snotes.push(id);
+                    }
+                }
             }
         }
         //-------------------------------------------------------------

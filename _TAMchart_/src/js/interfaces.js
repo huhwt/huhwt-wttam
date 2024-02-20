@@ -143,7 +143,7 @@ function readSingleFile(e)
                     });
             renderer.tickCounterTotal = 0;
             renderer.tickCounterCycles = 5;
-    }
+        }
         else
             console.error(i18n("U_f_t"));               // "Unrecognized file type"
     };
@@ -287,8 +287,8 @@ export function loadDataFromIDB(dbName, storeName, key) {
 
     if ( storeName == "H-Tree")
     {
-            renderer = new TAHRenderer();
-            parms.oSET("RENDERER", renderer);
+        renderer = new TAHRenderer();
+        parms.oSET("RENDERER", renderer);
 
         const dbaction = readFromDB(dbName, storeName, key);
         dbaction.then( value => { 
@@ -421,16 +421,20 @@ function processIDBgedcom(dataset)
         console.log(i18n("F_dnc_p"));                   // File does not contain parameters
         set_tamDefaultParameters();
     }
-    let gedcom = dataset.nodeData;
+    let ds_text = dataset.nodeData;
+    let ds_infodata = dataset.infoData;
+    if ( ds_infodata.length == 0) {
+        ds_infodata = null;
+    }
     let dsname = processFILENAME(dataset.dsname);
-    processGedcom(gedcom, function(gedcom, text) {
-        estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
+    processGedcom(ds_text, ds_infodata, function(ds_text, text) {
+        estimateMissingDates(ds_text, parms.GET("PROCREATION_AGE"));
         let renderer = parms.oGET("RENDERER");
         let objRef = renderer.instance;
         renderer.reset();
         renderer.load_GRAPH_DATA(text);
         renderer.initSVGLayers(objRef);
-        renderer.createFamilyForceGraph(gedcom);
+        renderer.createFamilyForceGraph(ds_text);
     });
 }
 function processFILENAME(_dsname) {

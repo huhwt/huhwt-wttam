@@ -372,7 +372,7 @@ export class TFMRenderer extends TAMRenderer
     //     objRef.TOPO_LAYER = objRef.CANVAS.append("g").attr("id", "topolayer" + sKenn);
     //     objRef.SHADING_LAYER = objRef.CANVAS.append("g").attr("id", "shadinglayer" + sKenn);
     //     objRef.GRAPH_LAYER = objRef.CANVAS.append("g").attr("id", "graphlayer" + sKenn);
-    // objRef.BULLS_EYE = objRef.CANVAS.select("#bullseye").append("g");
+    // // objRef.BULLS_EYE = objRef.CANVAS.select("#bullseye").append("g");
     }
     
     similarityForce(nodes, alpha) 
@@ -826,6 +826,19 @@ export class TFMRenderer extends TAMRenderer
     // Returns a string representation of the node to be used in tooltips
     getNodeAttributesAsString(node)
     {
+        function snotes(node) {
+            let _snotes = '';
+            if (node.snotes.length > 0) {
+                for(let i=0; i < node.snotes.length; i++) {
+                    if (node.snotes[i]) {
+                        let _t = node.snotes[i];
+                        _snotes += "\n - " + _t + " -";
+                    }
+                }
+            }
+            return _snotes;
+        }
+
         let _unknown = i18n("unknown");
         if (node.type == "PERSON")
         {
@@ -834,6 +847,7 @@ export class TFMRenderer extends TAMRenderer
                 : _unknown;
             const mother = node.getMother();
             const father = node.getFather();
+            let _snotes = node.snotes ? snotes(node) : '';
 
             return node.getFullName() + (node.id ? " (" + node.id + ")" : "")
                     + "\n\n" + i18n("birth") + (node.bdate ? node.bdate.toLocaleDateString() : _unknown)
@@ -841,6 +855,7 @@ export class TFMRenderer extends TAMRenderer
                     + "\n" + i18n("age") + age
                     + "\n" + i18n("mother") + (mother ? mother.getFullName() + " (" +  mother.id + ")" : _unknown)
                     + "\n" + i18n("father") + (father ? father.getFullName() + " (" +  father.id + ")" : _unknown)
+                    + _snotes
                     ;
         }
         else if (node.type == "FAMILY")
@@ -848,6 +863,7 @@ export class TFMRenderer extends TAMRenderer
             const wife = node.wife;
             const husband = node.husband;
             const mdate = node.mdate;
+            let _snotes = node.snotes ? snotes(node) : '';
 
             return node.familyname + (node.id ? " (" + node.id + ")" : "")
                     + "\n\n" + i18n("wife") + (wife ? wife.getFullName() + " (" + wife.id + ")" : _unknown)
@@ -855,6 +871,7 @@ export class TFMRenderer extends TAMRenderer
                     + "\n" + i18n("marriage") + (mdate ? node.mdate.toLocaleDateString() : _unknown)
                     + "\n" + i18n("children") + (node.children ? node.children.length : _unknown)
                     + "\n" + i18n("Fchild") + (node.value ? node.value : _unknown)
+                    + _snotes
                     ;
         }
         else

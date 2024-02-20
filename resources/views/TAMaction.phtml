@@ -1,10 +1,15 @@
 <?php
 
+/**
+ * webtrees - clippings vizualisation - TAM
+ *
+ * Copyright (C) 2023-2024 huhwt. All rights reserved.
+ *
+ */
+
 use Fisharebest\Webtrees\I18N;
 use Fisharebest\Webtrees\View;
 use Fisharebest\Webtrees\Tree;
-
-use function Sabre\Uri\split;
 
 /**
  * @var string              $module_cce
@@ -61,7 +66,7 @@ use function Sabre\Uri\split;
         <a id="btn_TAMstart" href="<?= $start_path ?>" target="#" class="btn btn-primary cce_disabled">
             <?= /* I18N: A button label. */ $start_text ?>
         </a>
-        <a href="<?= e(route('module', ['module' => $module_cce, 'action' => 'Show', 'tree' => $tree->name()])) ?>" class="btn btn-secondary">
+        <a href="<?= e(route('module', ['module' => $module_cce, 'action' => 'ShowCart', 'tree' => $tree->name()])) ?>" class="btn btn-secondary">
             <?= view('icons/cancel') ?>
             <?= I18N::translate('back to ClippingsCart-Show') ?>
         </a>

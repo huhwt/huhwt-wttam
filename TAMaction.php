@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * webtrees - clippings vizualisation - TAM
+ *
+ * Copyright (C) 2023-2024 huhwt. All rights reserved.
+ *
+ */
+
 declare(strict_types=1);
 
 namespace HuHwt\WebtreesMods\TAMchart;
@@ -63,7 +70,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.1.17.3';
+        return '2.1.18.0';
     }
 
     /**
@@ -261,11 +268,15 @@ class TAMaction extends AbstractModule
         $gedKey = Session::get($actKey);
         $theGedcom = Session::get($gedKey);
         $TAMdname = Session::get('TAM_DSname');
+        $INFOdata   = Session::get('INFOdata');
 
         $arr_string = array();
         $decodedstring = json_decode($theGedcom);
         $arr_string["gedcom"] = $decodedstring->gedcom;
         $arr_string["dsname"] = $TAMdname;
+        if ($INFOdata) {
+            $arr_string['infodata']  = json_decode($INFOdata);
+        }
 
         return response($arr_string);
     }

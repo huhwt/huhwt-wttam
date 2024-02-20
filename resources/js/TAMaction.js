@@ -24,11 +24,15 @@ function doAJAX(TAMkey, btnID, getID, doneID, TAMpath, textCompleted, nextText) 
             let response = JSON.parse(ret);
             let gedcom = response.gedcom;
             let dsname = response.dsname;
+            let infodata = {};
+            if (response.infodata)
+                infodata = response.infodata;
             let dataset = {
               "gedData":  [{
                 "storeID": "download",
                 "nodeData": gedcom,
-                "dsname": dsname
+                "dsname": dsname,
+                "infoData": infodata
             }]
             };
             putDB('wtTAM', 'Gedcom', dataset.gedData);
