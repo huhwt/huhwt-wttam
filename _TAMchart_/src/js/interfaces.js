@@ -154,6 +154,7 @@ function readSingleFile(e)
 function resetTFM(objRef) {
     objRef.resetScalarField(objRef);
     if (objRef.SVG_NODE_CIRCLES)  objRef.SVG_NODE_CIRCLES.remove();
+    if (objRef.SVG_DNODE_CIRCLES)  objRef.SVG_DNODE_CIRCLES.remove();
     if (objRef.SVG_LINKS)  objRef.SVG_LINKS.remove();
     if (objRef.SVG_NODE_LABELS)  objRef.SVG_NODE_LABELS.remove();
     if (objRef.SVG_DRAGABLE_ELEMENTS)  objRef.SVG_DRAGABLE_ELEMENTS.remove();
@@ -399,8 +400,15 @@ function processIDBtfm(dataset)
         set_tamDefaultParameters();
     }
     let gedcom = dataset.nodeData;
+    let ds_infodata = dataset.infoData;
+    if (ds_infodata) {
+        if ( ds_infodata.length == 0)
+            ds_infodata = null;
+    } else {
+        ds_infodata = null;
+    }
     processFILENAME(dataset.storeID);
-    processGedcom(gedcom, function(gedcom, text) {
+    processGedcom(gedcom, ds_infodata, function(gedcom, text) {
         estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
         let renderer = parms.oGET("RENDERER");
         let objRef = renderer.instance;
@@ -461,8 +469,15 @@ function processTFM(json, folder)
     let _sourceFile = parms.GET("SOURCE_FILE"); // parms.SOURCE_FILE is set by setParameters()
     let _sourcePath = folder + "/" + _sourceFile; // parms.SOURCE_FILE is set by setParameters()
 
+    if ("infoData" in json) {
+        ds_infodata = json.infoData;
+        if ( ds_infodata.length == 0)
+            ds_infodata = null;
+    } else {
+        ds_infodata = null;
+    }
     if("nodeData" in json) {
-        processGedcom(json.nodeData, function (gedcom, text) {
+        processGedcom(json.nodeData, function (gedcom, ds_infodata, text) {
             estimateMissingDates(gedcom, parms.GET("PROCREATION_AGE"));
 
             let renderer = parms.oGET("RENDERER");

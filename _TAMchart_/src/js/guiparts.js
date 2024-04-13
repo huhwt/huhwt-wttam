@@ -47,7 +47,7 @@ function html_title() {
     <hr>
 	<div class="title">
 		Topographic Attribute Maps - ℍ&ℍwt
-		<span id="version" class="version" title="${i18n('powered by TAM 1.20')}">2.1.18.0</span>
+		<span id="version" class="version" title="${i18n('powered by TAM 1.20')}">2.1.19.0</span>
 	</div>
     <hr>
     <!-------------------------------------------------------------------------------------->`;

@@ -18,7 +18,7 @@
 import { createDownloadFromBlob, getParameters, getMetadata, dumpGRAPH } from "./export.js";
 import { TAMRenderer, setRange } from "./TAMrenderer.js";
 // import { default as i18n } from "./i18n.js";
-import { vec, distance, isNumber, cleanDOM } from "./utils.js";
+import { vec, brighten, darken, distance, isNumber, cleanDOM } from "./utils.js";
 import { resetSVGLayers } from "./interfaces.js";
 import { showSVG, initInteractions, setTAMDragactions, makeTickCountInfo } from "./interaction.js"; 
 import * as parms from "./parms.js";
@@ -53,10 +53,12 @@ export class TFMRenderer extends TAMRenderer
 
         this.GRAPH = null;
 
-        this.PNODES = [];
-        this.FNODES = [];
-		this.LLNODES = [];
+        this.PNODES     = [];
+        this.FNODES     = [];
+		this.LLNODES    = [];
+        this.DNODES     = [];
         this.FAMILYLINKS = [];
+        this.DUPPERLINKS = [];
 
         this.SVG_FAMILY_CIRCLES = null;
         this.SVG_FAMILY_LABELS = null;
@@ -76,10 +78,12 @@ export class TFMRenderer extends TAMRenderer
 
     reset()
     {
-        this.PNODES = [];
-        this.FNODES = [];
-		this.LLNODES = [];
+        this.PNODES     = [];
+        this.FNODES     = [];
+		this.LLNODES    = [];
+        this.DNODES     = [];
         this.FAMILYLINKS = [];
+        this.DUPPERLINKS = [];
 
         this.SVG_FAMILY_CIRCLES = null;
         this.SVG_FAMILY_LABELS = null;
@@ -104,76 +108,13 @@ export class TFMRenderer extends TAMRenderer
         //----------------------------------
         graph.persons.forEach(p =>
         {
-            // set person data
-            p.type = "PERSON";
-            p.sr = 1;
-            p.r0 = _nodeRadius;
-            p.r = p.r0 * p.sr;
-            p.cr = p.sex == parms.Sex.FEMALE ? p.r0 : 0;
-            p.value = p.bdate ? p.bdate.getFullYear() : null;
-            if ( p.value && p.value > this.CurrentYear) {
-                p.value = this.CurrentYear;
-            }
-
-            p.valueD = p.ddate ? p.ddate.getFullYear() : null;
-
-            // set node positions (if available)
-            if (nodePositions && nodePositions[p.id])
-            {
-                p.x = nodePositions[p.id].x;
-                p.y = nodePositions[p.id].y;
-                p.vis = { 'x': p.x, 'y': p.y };
-                if (nodePositions[p.id].fixed) { // restore fixed state
-                    p.fx = p.x;
-                    p.fy = p.y;
-                }
-            }
-            else
-                p.vis = {'x': 0, 'y': 0};
-
-            objRef.PNODES.push(p);
-
-            // if active, create lifeline nodes
-            if (_showLifelines)
-            {
-                if (true && p.bdate && p.ddate)
-                {
-                    let startVal = p.bdate.getFullYear();
-                    let endVal = p.ddate.getFullYear();
-
-                    const segmentRange = 30;      // number of years per lifeline segment
-                    p.lifeline = [p];
-                    let val = startVal; 
-                    do
-                    {   let step = Math.min(segmentRange, endVal - val);
-                        val += step;
-                        
-                        // initialize node with random location scattered around the person location
-                        // -> leads to a smooth 'growing' appearance of lifelines if dynamically switched on
-                        var node = { 'type': "LIFELINENODE", 'value': val, 
-                                     'x': p.x + 3 * _nodeRadius * Math.random(),
-                                     'y': p.y + 3 * _nodeRadius * Math.random()
-                                    }; 
-                        var link = { "source": p.lifeline.at(-1), "target": node, "distance": step * PARM_RANGE_UNIT_LEN };    // array.at(-1) retrieves last element in array
-                        
-                        p.lifeline.push(node);
-                        this.LLNODES.push(node);
-                        LINKS.push(link);
-                    } 
-                    while (val < endVal);
-
-                    // apply saved lifeline positions, if available
-                    if (lifelinePositions && lifelinePositions[p.id]) {
-                        let llpos = lifelinePositions[p.id];
-                        for (let i = 1; i < p.lifeline.length && i < llpos.length; i++) {
-                            p.lifeline[i].x = llpos[i].x;
-                            p.lifeline[i].y = llpos[i].y;
-                        }
-                    }
-                }
-            }
+            exec_pnodes(p, objRef, objRef.PNODES, "PERSON", LINKS, nodePositions, lifelinePositions, _showLifelines, _nodeRadius);
         });
-
+        graph.persons_dup.forEach(p =>
+            {
+                exec_pnodes(p, objRef, objRef.DNODES, "PERSON_DUP", LINKS, nodePositions, lifelinePositions, _showLifelines, _nodeRadius);
+            });
+    
         setRange(objRef.PNODES, objRef.CurrentYear);
 
         // list families
@@ -236,18 +177,19 @@ export class TFMRenderer extends TAMRenderer
             objRef.FNODES.push(f);
         });
 
+        super.setColorMap(objRef);
+
         // link persons depending on ancestral graph appearance
         //-------------------------------------------------------------
-
         objRef.linkPersonsByFamilyNode(graph, LINKS, objRef);
         
         
         // Concat node links participating in force simulation in painter's order
         let NODES = objRef.FNODES.slice(0);
         objRef.LLNODES.forEach(n => NODES.push(n));
-        objRef.PNODES.forEach(n => NODES.push(n));
-        // let _PNODES = [];
-        // this.PNODES.forEach(n => _PNODES.push(n));
+        objRef.PNODES.forEach(n =>  NODES.push(n));
+        if (objRef.DNODES.length > 0)
+            objRef.DNODES.forEach(n =>  NODES.push(n));
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // FORCE SIMULATION OF FORCE-DIRECTED GRAPH
 
@@ -286,7 +228,6 @@ export class TFMRenderer extends TAMRenderer
         ///  CREATE SVG ELEMENTS
 
         super.initSVGLayers(objRef);
-        super.setColorMap(objRef);
         super.setNodeColors(objRef);
         
         // bottom layer
@@ -301,14 +242,19 @@ export class TFMRenderer extends TAMRenderer
             .attr("stroke-opacity", PARM_FAMILY_NODE_OPACITY)
             .attr("r", function(f) { return f.r; })
             ;
-        
+
+        let _linkwidth = parms.GET("LINK_WIDTH");
+        let _linkshow = parms.GET("SHOW_LINKS");
+        let _linkopacity = parms.GET("LINK_OPACITY");
+        if (!_linkshow) _linkopacity = 0;
         objRef.SVG_LINKS = objRef.GRAPH_LAYER.selectAll(".link")
             .data(objRef.FAMILYLINKS).enter()
             .append("line")
-            .attr("stroke", parms.GET("LINK_COLOR"))
-            .attr("stroke-width", parms.GET("LINK_WIDTH") + "px")
-            .attr("opacity", parms.GET("SHOW_LINKS") ? parms.GET("LINK_OPACITY") : 0)
-            .attr("marker-end","url(#arrow)")
+            .attr("stroke", function(link) { return link.color; })
+            .attr("stroke-width", _linkwidth + "px")
+            .attr("stroke-dasharray", function(link) { return link.directed ? "" : "6,4"; })
+            .attr("opacity", _linkopacity)
+            .attr("marker-end", function(link) { return objRef.setArrow(link); })
             ;
 
         let _nr = _nodeRadius / 4;
@@ -326,23 +272,41 @@ export class TFMRenderer extends TAMRenderer
             .append("rect")
             .attr("class", "person")
             .style("fill", function(node) { return typeof(node.value) == "number" ? objRef.SVG_COLORMAP(node.value) : "red"; })
-            .style("stroke", "#222")
+            // .style("stroke", "#222")
+            .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
             .attr("stroke-width", _nr + "px")
-            .attr("width", function (p) { return 2 * p.r; })
-            .attr("height", function (p) { return 2 * p.r; })
-            .attr("rx", function (p) { return p.cr; })
-            .attr("ry", function (p) { return p.cr; })
+            .attr("width", function (n) { return 2 * n.r; })
+            .attr("height", function (n) { return 2 * n.r; })
+            .attr("rx", function (n) { return n.crx; })
+            .attr("ry", function (n) { return n.cry; })
             ;
         
+        if (objRef.DNODES.length > 0) {
+            objRef.SVG_DNODE_CIRCLES = objRef.GRAPH_LAYER.selectAll(".person_dup")
+                .data(objRef.DNODES).enter()
+                .append("rect")
+                .attr("class", "person_dup")
+                .style("fill", function(node) { return typeof(node.value) == "number" ? objRef.SVG_COLORMAP(node.value) : "red"; })
+                // .style("stroke", "#222")
+                .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
+                .attr("stroke-width", _nr + "px")
+                .attr("width", function (n) { return 2 * n.r; })
+                .attr("height", function (n) { return 2 * n.r; })
+                .attr("rx", function (n) { return n.crx; })
+                .attr("ry", function (n) { return n.cry; })
+                ;
+            objRef.show_dup();
+        }
         if (parms.GET("SHOW_NAMES"))
             objRef.showNames();
 
+    
         // ("SVG Elements Initialized.");
         console.log(i18n("SVG_E_i"));
         console.log("GRAPH_LAVER",objRef.GRAPH_LAYER);
 
         // Setup interactions
-        objRef.SVG_DRAGABLE_ELEMENTS = objRef.GRAPH_LAYER.selectAll(".family,.person");
+        objRef.SVG_DRAGABLE_ELEMENTS = objRef.GRAPH_LAYER.selectAll(".family,.person,.person_dup");
         console.log("SVG_DRAGABLE_ELEMENTS",objRef.SVG_DRAGABLE_ELEMENTS);
         if (!objRef.isInitialized) {
             initInteractions(objRef);
@@ -354,6 +318,30 @@ export class TFMRenderer extends TAMRenderer
         console.log(i18n("Int_i"));
 
         showSVG(objRef);
+    }
+
+    setBorderColor(node) {
+        let _bcolor = parms.Scolor[node.sex];
+        return _bcolor;
+    }
+    setDash_d(link) {
+        let _dasharray = "";
+        if (link.type == "dashed")
+            _dasharray = "2,4";
+        return _dasharray;
+    }
+    setArrow(link, mode="TFM") {
+        // input:   link
+        // output:  arrow type corresponding to relation type | "none"
+        if (link.directed) {
+            if (link.relation == "mother") {
+                return "url(#arrow"+ mode +"2)";
+            } else {
+                return "url(#arrow"+ mode +"1)";
+            }
+        } else {
+            return "none";
+        }
     }
 
     initSVGLayers(objRef)
@@ -410,18 +398,42 @@ export class TFMRenderer extends TAMRenderer
         //-- link family node with parents
         graph.families.forEach(f => 
         {
-            let sources = [];
-            if (f.husband) sources.push(f.husband);
-            if (f.wife) sources.push(f.wife);
-            sources.forEach(source => 
-            {
-                let link = { "source": source, "target": f, "distance": _linkDistance * 0.8 + f.r };
+            let _swife      = f.wife;
+            let _shusband   = f.husband;
+
+            let _ld = _linkDistance * 0.8 + f.r;
+            if (_shusband) {
+                let link = { "source": _shusband, "target": f, "distance": _ld };
+                let flink = {"source": _shusband, "target": f, "distance": _ld, "directed": true, "relation": "father", "color": "#39F", "type": "stroke" };
                 LINKS.push(link);
-                objRef.FAMILYLINKS.push(link);
-            });
+                objRef.FAMILYLINKS.push(flink);
+            }
+            if (_swife) {
+                let link = { "source": _swife, "target": f, "distance": _ld };
+                let flink = {"source": _swife, "target": f, "distance": _ld, "directed": true, "relation": "mother", "color": "#F39", "type": "stroke" };
+                LINKS.push(link);
+                objRef.FAMILYLINKS.push(flink);
+            }
+        });
+
+        //-- link duplicated persons
+        graph.persons_dup.forEach( dperson => 
+        {
+            let _dp  = dperson;
+            let _p   = graph.persons.get(dperson.p_id);
+
+            if (_dp && _p) {
+                let _ld = _linkDistance;
+                let _color = "red";
+                if (typeof(_p.value) == "number")
+                    _color = darken(objRef.SVG_COLORMAP(_p.value));
+                let link = { "source": _p, "target": _dp, "distance": _ld };
+                let flink = {"source": _p, "target": _dp, "distance": _ld, "directed": false, "relation": "dupped", "color": _color, "type": "dashed" };
+                LINKS.push(link);
+                objRef.FAMILYLINKS.push(flink);
+            }
         });
     }
-
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -458,29 +470,9 @@ export class TFMRenderer extends TAMRenderer
         
         // set visualization positions of persons by pushing them back into their parent family circle
         this.SVG_NODE_CIRCLES.each(p =>
-        {
-            // set visualization position to simulation position by default
-            p.vis.x = p.x;
-            p.vis.y = p.y;
-
-            if (p.parentFamily) 
-            {
-                if (p.parentFamily.children.length == 1)
-                {
-                    p.vis.x = p.parentFamily.x;
-                    p.vis.y = p.parentFamily.y;
-                }
-                else
-                {
-                    let dist = distance(p.vis, p.parentFamily);    // actual distance between node vis positions
-                    if (dist > p.fnodedist){
-                        let fac = (dist - p.fnodedist) / dist;
-                        p.vis.x += (p.parentFamily.x - p.vis.x) * fac;
-                        p.vis.y += (p.parentFamily.y - p.vis.y) * fac;
-                    }
-                }
-            }
-        });
+        {   shift_pnodes(p); });
+        this.SVG_DNODE_CIRCLES.each(p =>
+        {   shift_pnodes(p); })
         
         this.SVG_FAMILY_CIRCLES.each(f => {
             f.vis.x = f.x; 
@@ -493,38 +485,47 @@ export class TFMRenderer extends TAMRenderer
         //      = 0: no Htree in progress
         //        > 0: Htreed Person fixed, set special shape
         //        < 0: Htreed Person released, reset to regular shape
-        if (this.Htreed == 0) {
+        // if (this.Htreed == 0) {
             this.SVG_NODE_CIRCLES
-                .style("stroke", function(p) { return p.fx == null ? "#222" : PARM_NODE_BORDER_COLOR_FIXED; })
-                .attr("x", function (p) { return p.vis.x - p.r; })
-                .attr("y", function (p) { return p.vis.y - p.r; })
+                .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
+                .attr("rx", function (n) { return n.crx * n.sr; })
+                .attr("ry", function (n) { return n.cry * n.sr; })
+                .attr("x", function (n) { return n.vis.x - n.r; })
+                .attr("y", function (n) { return n.vis.y - n.r; })
                 ;
-        } else {
+            this.SVG_DNODE_CIRCLES
+                .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
+                .attr("rx", function (n) { return n.crx * n.sr; })
+                .attr("ry", function (n) { return n.cry * n.sr; })
+                .attr("x", function (n) { return n.vis.x - n.r; })
+                .attr("y", function (n) { return n.vis.y - n.r; })
+                ;
+        // } else {
             if (this.Htreed > 0) {
                 this.SVG_NODE_CIRCLES
-                    .style("stroke", function(p) { return p.fx == null ? "#222" : PARM_NODE_BORDER_COLOR_FIXED; })
-                    .style("fill", function(p) { return p.fx == null ? objRef.SVG_COLORMAP(p.value) : "orange"; })
-                    .attr("width", function (p) { return 2 * p.r * p.sr; })
-                    .attr("height", function (p) { return 2 * p.r * p.sr; })
-                    .attr("rx", function (p) { return p.cr * p.sr; })
-                    .attr("ry", function (p) { return p.cr * p.sr; })
-                    .attr("x", function (p) { return p.vis.x - p.r; })
-                    .attr("y", function (p) { return p.vis.y - p.r; })
+                    // .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
+                    .style("fill", function(n) { return n.fx == null ? objRef.SVG_COLORMAP(n.value) : "orange"; })
+                    .attr("width", function (n) { return 2 * n.r * n.sr; })
+                    .attr("height", function (n) { return 2 * n.r * n.sr; })
+                    // .attr("rx", function (n) { return n.crx * n.sr; })
+                    // .attr("ry", function (n) { return n.cry * n.sr; })
+                    // .attr("x", function (n) { return n.vis.x - n.r; })
+                    // .attr("y", function (n) { return n.vis.y - n.r; })
                     ;
-            } else {
+            } else if (this.Htreed < 0) {
                 this.Htreed = 0;
                 this.SVG_NODE_CIRCLES
-                    .style("stroke", function(p) { return p.fx == null ? "#222" : PARM_NODE_BORDER_COLOR_FIXED; })
-                    .style("fill", function(p) { return p.fx == null ? objRef.SVG_COLORMAP(p.value) : "orange"; })
-                    .attr("width", function (p) { return 2 * p.r * p.sr; })
-                    .attr("height", function (p) { return 2 * p.r * p.sr; })
-                    .attr("rx", function (p) { return p.cr * p.sr; })
-                    .attr("ry", function (p) { return p.cr * p.sr; })
-                    .attr("x", function (p) { return p.vis.x - p.r; })
-                    .attr("y", function (p) { return p.vis.y - p.r; })
+                    // .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
+                    .style("fill", function(n) { return n.fx == null ? objRef.SVG_COLORMAP(n.value) : "orange"; })
+                    .attr("width", function (n) { return 2 * n.r * n.sr; })
+                    .attr("height", function (n) { return 2 * n.r * n.sr; })
+                    // .attr("rx", function (n) { return n.crx * n.sr; })
+                    // .attr("ry", function (n) { return n.cry * n.sr; })
+                    // .attr("x", function (n) { return n.vis.x - n.r; })
+                    // .attr("y", function (n) { return n.vis.y - n.r; })
                     ;
             }
-        }
+        // }
         this.SVG_FAMILY_CIRCLES
             .style("stroke", function(f) { return f.fx == null ? PARM_FAMILY_NODE_BORDER_COLOR : PARM_NODE_BORDER_COLOR_FIXED; })
             .attr("cx", function(f) { return f.vis.x; })
@@ -580,6 +581,7 @@ export class TFMRenderer extends TAMRenderer
             this.SVG_NODE_LABELS.attr("transform", this.placeLabelP);
             this.SVG_FAMILY_LABELS.attr("transform", this.placeLabel);
         }
+        this.SVG_DUP_LABELS.attr("transform", this.placeLabelD);
 
         objRef.showALPHA(objRef);
 
@@ -639,6 +641,23 @@ export class TFMRenderer extends TAMRenderer
         this.SVG_FAMILY_LABELS.attr("transform", this.placeLabel);
     }
 
+    show_dup() {
+        // duplicated person labels
+        //-----------------------------------------------------------------
+        this.SVG_DUP_LABELS = this.GRAPH_LAYER.selectAll(".dup_labels")
+            .data(this.DNODES).enter() 
+            .append("text")
+            .text(function(node) { return "d"; })
+            .style("fill", parms.GET("LABEL_COLOR"))
+            .style("stroke", "white")
+            .style("stroke-width", parms.GET("FONT_SIZE_DUP") / 5)
+            .style("paint-order", "stroke")
+            .style("font-family", "Calibri")
+            .style("font-size", parms.GET("FONT_SIZE_DUP"))
+            .style("pointer-events", "none")  // to prevent mouseover/drag capture
+            .style("opacity", parms.GET("PERSON_LABEL_OPACITY"))
+            ;
+    }
 
     placeLabelP(node)
     {
@@ -697,6 +716,13 @@ export class TFMRenderer extends TAMRenderer
             }
         }
          
+    }
+
+    placeLabelD(node)
+    {
+        let x = node.vis.x - 0.25 * parms.GET("FONT_SIZE_DUP");
+        let y = node.vis.y + 0.25 * parms.GET("FONT_SIZE_DUP");
+        return "translate(" + x + ", " + y + ")";
     }
 
     placeLabel(node)
@@ -801,6 +827,7 @@ export class TFMRenderer extends TAMRenderer
             objRef.createTunnels(SCALARFIELD, SEGMENTS);
 
             if (objRef.SVG_NODE_CIRCLES) objRef.SVG_NODE_CIRCLES.raise();    
+            if (objRef.SVG_DNODE_CIRCLES) objRef.SVG_DNODE_CIRCLES.raise();    
             //if (this.SVG_FAMILY_CIRCLES) this.SVG_FAMILY_CIRCLES.raise();    // needs to stay below links
             if (objRef.SVG_NODE_LABELS) objRef.SVG_NODE_LABELS.raise();
             if (objRef.SVG_FAMILY_LABELS) objRef.SVG_FAMILY_LABELS.raise();
@@ -840,7 +867,7 @@ export class TFMRenderer extends TAMRenderer
         }
 
         let _unknown = i18n("unknown");
-        if (node.type == "PERSON")
+        if (node.type.startsWith("PERSON"))
         {
             const age = node.bdate && node.ddate
                 ? Math.floor((node.ddate - node.bdate) / 31536000000) // 1000ms * 60s * 60min * 24h * 365d
@@ -966,4 +993,110 @@ export class TFMRenderer extends TAMRenderer
         putDB("wtTAM","TFMdata", dataset.TFMdata);
     
     }
+}
+
+function exec_pnodes(p, objRef, _PNODES, _nodeType, _LINKS, _nodePositions, _lifelinePositions, _showLifelines, _nodeRadius)
+{
+    // set person data
+    p.type = _nodeType;
+    p.sr = 1;
+    p.r0 = _nodeRadius;
+    p.r = p.r0 * p.sr;
+    p.cr = p.sex == parms.Sex.FEMALE ? p.r0 : 0;
+    p.crx = 0;
+    p.cry = 0;
+    switch (p.sex) {
+        case parms.Sex.MALE: break;
+        case parms.Sex.FEMALE:  p.crx = p.r0; p.cry = p.r0; break;
+        case parms.Sex.DIVERS:  p.crx = p.r0*1.2; p.cry = p.r0*0.4; break;
+        default: p.crx = 0.1; p.cry = p.r0;
+    }
+    p.value = p.bdate ? p.bdate.getFullYear() : null;
+    if ( p.value && p.value > objRef.CurrentYear) {
+        p.value = objRef.CurrentYear;
+    }
+
+    p.valueD = p.ddate ? p.ddate.getFullYear() : null;
+
+    // set node positions (if available)
+    if (_nodePositions && _nodePositions[p.id])
+    {
+        p.x = _nodePositions[p.id].x;
+        p.y = _nodePositions[p.id].y;
+        p.vis = { 'x': p.x, 'y': p.y };
+        if (_nodePositions[p.id].fixed) { // restore fixed state
+            p.fx = p.x;
+            p.fy = p.y;
+        }
+    }
+    else
+        p.vis = {'x': 0, 'y': 0};
+
+    _PNODES.push(p);
+
+    // if active, create lifeline nodes
+    if (_showLifelines)
+    {
+        if (true && p.bdate && p.ddate)
+        {
+            let startVal = p.bdate.getFullYear();
+            let endVal = p.ddate.getFullYear();
+
+            const segmentRange = 30;      // number of years per lifeline segment
+            p.lifeline = [p];
+            let val = startVal; 
+            do
+            {   let step = Math.min(segmentRange, endVal - val);
+                val += step;
+                
+                // initialize node with random location scattered around the person location
+                // -> leads to a smooth 'growing' appearance of lifelines if dynamically switched on
+                var node = { 'type': "LIFELINENODE", 'value': val, 
+                                'x': p.x + 3 * _nodeRadius * Math.random(),
+                                'y': p.y + 3 * _nodeRadius * Math.random()
+                            }; 
+                var link = { "source": p.lifeline.at(-1), "target": node, "distance": step * PARM_RANGE_UNIT_LEN };    // array.at(-1) retrieves last element in array
+                
+                p.lifeline.push(node);
+                objRef.LLNODES.push(node);
+                _LINKS.push(link);
+            } 
+            while (val < endVal);
+
+            // apply saved lifeline positions, if available
+            if (_lifelinePositions && _lifelinePositions[p.id]) {
+                let llpos = _lifelinePositions[p.id];
+                for (let i = 1; i < p.lifeline.length && i < llpos.length; i++) {
+                    p.lifeline[i].x = llpos[i].x;
+                    p.lifeline[i].y = llpos[i].y;
+                }
+            }
+        }
+    }
+};
+
+function shift_pnodes(p)
+{
+    // set visualization position to simulation position by default
+    p.vis.x = p.x;
+    p.vis.y = p.y;
+
+    if (p.parentFamily) 
+    {
+        if (p.parentFamily.children.length == 1)
+        {
+            p.vis.x = p.parentFamily.x;
+            p.vis.y = p.parentFamily.y;
+        }
+        else
+        {
+            let dist = distance(p.vis, p.parentFamily);    // actual distance between node vis positions
+            if (dist > p.fnodedist){
+                let fac = (dist - p.fnodedist) / dist;
+                p.vis.x += (p.parentFamily.x - p.vis.x) * fac;
+                p.vis.y += (p.parentFamily.y - p.vis.y) * fac;
+            }
+        }
+    }
+
 }

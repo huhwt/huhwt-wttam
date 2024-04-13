@@ -38,8 +38,14 @@ class Field
 
     set(x, y, value)
     {
-        if (this.inRange(x, y))
-            this.values[this.index(x,y)] = value;
+        let _valcnt = this.values.length;
+        if (this.inRange(x, y)) {
+            try {
+                this.values[this.index(x,y)] = value;
+            } catch (error) {
+                
+            }
+        }
     }
 
     index(x, y)

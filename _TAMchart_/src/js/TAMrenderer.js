@@ -89,6 +89,7 @@ export class TAMRenderer
         // SVG Elements
         this.SVG_NODE_CIRCLES = null;
         this.SVG_LINKS = null;
+        this.SVG_DUP_LINKS = null;
         this.SVG_NODE_LABELS = null;
         this.SVG_CONTOURS = null;
         this.SVG_SHADING_CONTOURS = null;
@@ -140,6 +141,7 @@ export class TAMRenderer
     reset() {
         this.SVG_NODE_CIRCLES = null;
         this.SVG_LINKS = null;
+        this.SVG_DUP_LINKS = null;
         this.SVG_NODE_LABELS = null;
         this.SVG_CONTOURS = null;
         this.SVG_SHADING_CONTOURS = null;
@@ -266,21 +268,27 @@ export class TAMRenderer
         objRef.setColorMap(objRef);
         objRef.setNodeColors(objRef);
 
+        let _linkwidth = parms.GET("LINK_WIDTH");
+        let _linkshow = parms.GET("SHOW_LINKS");
+        let _linkopacity = parms.GET("LINK_OPACITY");
+        if (!_linkshow) _linkopacity = 0;
+
         objRef.SVG_LINKS = objRef.GRAPH_LAYER.selectAll(".link")
             .data(objRef.LINKS).enter()
             .append("line")
             .attr("stroke", parms.GET("LINK_COLOR"))
-            .attr("stroke-width", parms.GET("LINK_WIDTH") + "px")
-            .attr("opacity", parms.GET("SHOW_LINKS") ? parms.GET("LINK_OPACITY") : 0)
-            .attr("marker-end",    function(link) { return link.directed ? "url(#arrowTAM)" : "none"; })
+            .attr("stroke-width", _linkwidth + "px")
+            .attr("opacity", _linkopacity)
+            .attr("marker-end", function(link) { return link.directed ? "url(#arrowTAM)" : "none"; })
             ;
 
+        let _nodeRadius = parms.GET("NODE_RADIUS") / 4;
         objRef.SVG_NODE_CIRCLES = objRef.GRAPH_LAYER.selectAll(".nodes")
             .data(objRef.NODES).enter()
             .append("circle")
             .style("fill", function(node) { return typeof(node.value) == "number" ? objRef.SVG_COLORMAP(node.value) : "red"; })
             .style("stroke", "#222")
-            .attr("stroke-width", (parms.GET("NODE_RADIUS") / 4) + "px")
+            .attr("stroke-width", _nodeRadius + "px")
             .attr("r", function(node) { return node.r; })
             //.attr("filter", "url(#dropshadowTAM)")
             ;
@@ -1044,7 +1052,7 @@ export class TAMRenderer
         let _blfd = _vbval[0];                                                      //     ... zugeordneter Button
         let _vb_active = document.getElementsByClassName("vbutton__" + _blfd)[0];   //         ... auslesen
         let _vb_act_cl = _vb_active.classList;                                      //             Classlist ...
-        if ( _vb_act_cl.contains('vb_active') )                                     //             auf aktiv prüfen
+        if ( _vb_act_cl.contains('vb_active') )                                     //             auf aktiv prÃ¼fen
             _vb_act_cl.toggle('vb_active');                                         //             fallweise abschalten
 
         parms.SET("viewboxdim", _vbdim);                                           // neue Kennung speichern
@@ -1055,7 +1063,7 @@ export class TAMRenderer
         _blfd = _vbval[0];                                                          //     ... zugeordneter Button
         _vb_active = document.getElementsByClassName("vbutton__" + _blfd)[0];       //         ... Button auslesen
         _vb_act_cl = _vb_active.classList;                                          //             Classlist ...
-        if ( !_vb_act_cl.contains('vb_active') )                                    //             auf aktiv prüfen
+        if ( !_vb_act_cl.contains('vb_active') )                                    //             auf aktiv prÃ¼fen
             _vb_act_cl.toggle('vb_active');                                         //             fallweise anschalten
 
         this.setvbDim_Do(_vbdim, _vbval);

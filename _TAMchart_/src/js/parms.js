@@ -14,7 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 export const InterpolationType = {'MIN': 1, 'AVG': 2, 'MAX': 3};
-export const Sex = {'MALE': 1, 'FEMALE': 2};
+export const Sex = {'MALE': 1, 'FEMALE': 2, 'DIVERS': 3, 'UNKNOWN': 4};
+export const Scolor = ['#000', '#39F', '#F39', '#FCEAA1', '#CCEECC'];               // bordercolor  -> similar to links (male/female)
 
 // -> PARMS viewboxdim
 //          lfd   X-0    Y-0  Width Height
@@ -60,6 +61,7 @@ const PARMSarr = [
     [ "NODE_RADIUS" , NODE_RADIUS],
     [ "PERSON_LABEL_OPACITY" , 0.7],
     [ "PERSON_LABELS_BELOW_NODE" , true],   // internal use only
+    [ "NODE_BORDER_COLOR_FIXED", "#ad0de2" ],
 
     // Map appearance
     [ "SHOW_CONTOURS" , false],
@@ -88,6 +90,7 @@ const PARMSarr = [
     [ "SF_INTERPOLATION_TYPE" , InterpolationType.MIN],
 
     [ "FONT_SIZE" , 20],
+    [ "FONT_SIZE_DUP" , 16],
     [ "LINK_DISTANCE" , 8 * NODE_RADIUS],
     [ "LINK_OPACITY" , 1],
     [ "ARROW_RADIUS" , 14],
