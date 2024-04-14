@@ -471,9 +471,10 @@ export class TFMRenderer extends TAMRenderer
         // set visualization positions of persons by pushing them back into their parent family circle
         this.SVG_NODE_CIRCLES.each(p =>
         {   shift_pnodes(p); });
-        this.SVG_DNODE_CIRCLES.each(p =>
-        {   shift_pnodes(p); })
-        
+        if (this.SVG_DNODE_CIRCLES) {
+            this.SVG_DNODE_CIRCLES.each(p =>
+            {   shift_pnodes(p); })
+        }
         this.SVG_FAMILY_CIRCLES.each(f => {
             f.vis.x = f.x; 
             f.vis.y = f.y;
@@ -493,13 +494,15 @@ export class TFMRenderer extends TAMRenderer
                 .attr("x", function (n) { return n.vis.x - n.r; })
                 .attr("y", function (n) { return n.vis.y - n.r; })
                 ;
-            this.SVG_DNODE_CIRCLES
-                .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
-                .attr("rx", function (n) { return n.crx * n.sr; })
-                .attr("ry", function (n) { return n.cry * n.sr; })
-                .attr("x", function (n) { return n.vis.x - n.r; })
-                .attr("y", function (n) { return n.vis.y - n.r; })
-                ;
+            if (this.SVG_DNODE_CIRCLES) {
+                this.SVG_DNODE_CIRCLES
+                    .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
+                    .attr("rx", function (n) { return n.crx * n.sr; })
+                    .attr("ry", function (n) { return n.cry * n.sr; })
+                    .attr("x", function (n) { return n.vis.x - n.r; })
+                    .attr("y", function (n) { return n.vis.y - n.r; })
+                    ;
+            }
         // } else {
             if (this.Htreed > 0) {
                 this.SVG_NODE_CIRCLES
