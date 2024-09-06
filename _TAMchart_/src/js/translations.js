@@ -136,7 +136,7 @@ const text_en = `{"values":{
             "idb_TREEdata": "Stored Tree views",
             "svg_Export_h1": "Click and drag: Move | Mouse wheel: Zoom | Double-click: Reset",
             "ZZZZ": "en"
-            }}`;
+}}`;
 
 const text_de = `{"values":{
             "Yes": "Ja",
@@ -265,7 +265,7 @@ const text_de = `{"values":{
             "Viewport - Basic setting" : "Ansicht - Grundeinstellung",
             "Nodal views:" : "Knotenansichten:",
             "ZZZZ": "de"
-            }}`;
+}}`;
 
 const text_nl = `{"values":{
             "Yes": "Ja",
@@ -365,7 +365,7 @@ const text_nl = `{"values":{
             "Viewport - Basic setting" : "Weergave - Basisinstelling",
             "Nodal views:" : "Knooppuntweergaven:",
             "ZZZZ": "nl"
-            }}`;
+}}`;
 
 const text_ca = `{"values":{
             "Yes": "Si",
@@ -599,7 +599,7 @@ const text_es = `{"values":{
             "idb_TREEdata": "Vista de árboles archivados",
             "svg_Export_h1": "Pulsar y arrastrar: Mover panorámica | Rueda del ratón: Zoom | Doble clic: Restablecer",
             "ZZZZ": "es"
-            }}`;
+}}`;
 
 export function switch_locale(_locale) {
     let _text = '';

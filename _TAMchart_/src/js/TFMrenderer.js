@@ -111,9 +111,9 @@ export class TFMRenderer extends TAMRenderer
             exec_pnodes(p, objRef, objRef.PNODES, "PERSON", LINKS, nodePositions, lifelinePositions, _showLifelines, _nodeRadius);
         });
         graph.persons_dup.forEach(p =>
-            {
-                exec_pnodes(p, objRef, objRef.DNODES, "PERSON_DUP", LINKS, nodePositions, lifelinePositions, _showLifelines, _nodeRadius);
-            });
+        {
+            exec_pnodes(p, objRef, objRef.DNODES, "PERSON_DUP", LINKS, nodePositions, lifelinePositions, _showLifelines, _nodeRadius);
+        });
     
         setRange(objRef.PNODES, objRef.CurrentYear);
 
@@ -158,8 +158,7 @@ export class TFMRenderer extends TAMRenderer
             //    if (f.husband && f.husband.surname) f.familyname = f.husband.surname.toUpperCase();
             //    else if (f.children.length == 1)    f.familyname = f.children[0].surname.toUpperCase();
             //}
-            
-            
+
             // compute value of this node
             if (f.children.length == 0) {
                 f.value = null;
@@ -173,7 +172,18 @@ export class TFMRenderer extends TAMRenderer
             if (!f.value || f.value === 1e20) {
                 f.value = 0;
             }
-            
+
+            f.dasharray = "";
+            f.fnwidth = PARM_FAMILY_NODE_BORDER_WIDTH;
+            if (!f.mdate) {
+                f.fnwidth = f.fnwidth * 0.4;
+                f.dasharray = "8,6";
+                if (f.husband && f.wife) {
+                    if (f.children.length == 1)
+                        f.dasharray = "";
+                }
+            }
+
             objRef.FNODES.push(f);
         });
 
@@ -471,10 +481,9 @@ export class TFMRenderer extends TAMRenderer
         // set visualization positions of persons by pushing them back into their parent family circle
         this.SVG_NODE_CIRCLES.each(p =>
         {   shift_pnodes(p); });
-        if (this.SVG_DNODE_CIRCLES) {
-            this.SVG_DNODE_CIRCLES.each(p =>
-            {   shift_pnodes(p); })
-        }
+        if (this.SVG_DNODE_CIRCLES)
+            this.SVG_DNODE_CIRCLES.each(p =>{   shift_pnodes(p); })
+        
         this.SVG_FAMILY_CIRCLES.each(f => {
             f.vis.x = f.x; 
             f.vis.y = f.y;
@@ -494,7 +503,7 @@ export class TFMRenderer extends TAMRenderer
                 .attr("x", function (n) { return n.vis.x - n.r; })
                 .attr("y", function (n) { return n.vis.y - n.r; })
                 ;
-            if (this.SVG_DNODE_CIRCLES) {
+            if (this.SVG_DNODE_CIRCLES)
                 this.SVG_DNODE_CIRCLES
                     .style("stroke", function(node) { return node.fx == null ? objRef.setBorderColor(node) : PARM_NODE_BORDER_COLOR_FIXED; })
                     .attr("rx", function (n) { return n.crx * n.sr; })
@@ -502,7 +511,6 @@ export class TFMRenderer extends TAMRenderer
                     .attr("x", function (n) { return n.vis.x - n.r; })
                     .attr("y", function (n) { return n.vis.y - n.r; })
                     ;
-            }
         // } else {
             if (this.Htreed > 0) {
                 this.SVG_NODE_CIRCLES
@@ -531,6 +539,8 @@ export class TFMRenderer extends TAMRenderer
         // }
         this.SVG_FAMILY_CIRCLES
             .style("stroke", function(f) { return f.fx == null ? PARM_FAMILY_NODE_BORDER_COLOR : PARM_NODE_BORDER_COLOR_FIXED; })
+            .attr("stroke-width", function(f) { return f.fnwidth; })
+            .attr("stroke-dasharray", function(f) { return f.dasharray; })
             .attr("cx", function(f) { return f.vis.x; })
             .attr("cy", function(f) { return f.vis.y; })
             .attr("r", function(f) { return f.r; })
@@ -584,7 +594,8 @@ export class TFMRenderer extends TAMRenderer
             this.SVG_NODE_LABELS.attr("transform", this.placeLabelP);
             this.SVG_FAMILY_LABELS.attr("transform", this.placeLabel);
         }
-        this.SVG_DUP_LABELS.attr("transform", this.placeLabelD);
+        if (this.SVG_DUP_LABELS)
+            this.SVG_DUP_LABELS.attr("transform", this.placeLabelD);
 
         objRef.showALPHA(objRef);
 

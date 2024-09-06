@@ -129,10 +129,11 @@ export function showSVG(renderer, show=true) {
     let sKENN = "#s" + sSuff;
     let _svg = d3.select(sKENN);
     if (show)
-            _svg.style("display", "inline");
+        _svg.style("display", "inline");
     else
-            _svg.style("display", "none");
-        }
+        _svg.style("display", "none");
+
+}
 
 /////////////////////////////////////////////////////////////////////////////
 ///  SVG INTERACTIONS

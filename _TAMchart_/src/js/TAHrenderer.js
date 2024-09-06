@@ -64,6 +64,7 @@ export class TAHRenderer extends TAMRenderer
 
         // this.COLORMAP = d3.scaleSequential(d3.interpolateRainbow);
         this.NODES_COLORMAP = null;
+
     }
 
     createPersonForceGraph(dataset)
@@ -228,7 +229,7 @@ export class TAHRenderer extends TAMRenderer
     //     objRef.TOPO_LAYER = objRef.CANVAS.append("g").attr("id", "topolayer");
     //     objRef.SHADING_LAYER = objRef.CANVAS.append("g").attr("id", "shadinglayer");
     //     objRef.GRAPH_LAYER = objRef.CANVAS.append("g").attr("id", "graphlayer");
-        // objRef.BULLS_EYE = objRef.CANVAS.select("#bullseye").append("g");
+    //     // objRef.BULLS_EYE = objRef.CANVAS.select("#bullseye").append("g");
     }
     
     setNodeColors(objRef) 
@@ -417,7 +418,7 @@ export class TAHRenderer extends TAMRenderer
 
     saveDataF()
     {
-        // store person/family node positions with their id
+        // store person node positions with their id
         let nodePositions = {};
         this.NODES.forEach(p => { nodePositions[p.id] = {"x": p.x, "y": p.y, "fixed": p.fx != null}; });
 
