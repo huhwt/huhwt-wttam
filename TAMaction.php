@@ -24,12 +24,11 @@ use Fisharebest\Webtrees\Module\ModuleInterface;
 use Fisharebest\Webtrees\Module\ModuleGlobalInterface;
 
 use Fisharebest\Webtrees\Session;
-use Fisharebest\Webtrees\Tree;
+use Fisharebest\Webtrees\Registry;
 use Fisharebest\Webtrees\Validator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-use function app;
 use function assert;
 use function e;
 
@@ -70,7 +69,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.1.20.0';
+        return '2.2.0.0';
     }
 
     /**
@@ -177,7 +176,7 @@ class TAMaction extends AbstractModule
      */
     public function boot(): void 
     {
-        $router_container = app(RouterContainer::class);
+        $router_container = Registry::container()->get(RouterContainer::class);
         assert($router_container instanceof RouterContainer);
         $router = $router_container->getMap();
         // echo(json_encode($router->getRoutes()));
