@@ -8,7 +8,7 @@ This [webtrees](https://www.webtrees.net/) module hosts TAM -Topographic Attribu
 
 This is a webtrees 2.2 module - It cannot be used with webtrees 2.1.
 
-For webtrees 2.1 use the huhwt-wttam Release v2.1.20.0 respectively the huhwt-wttam Branch 2.1.
+For webtrees 2.1 use the latest release of the huhwt-wttam Branch 2.1.
 
 ## Contents
 This readme contains the following main sections
@@ -42,7 +42,7 @@ Recent translations into Catalan and Spanish have indicated that the user interf
 <a name="requirements"></a>
 ## Requirements 
 
-This module requires **webtrees** version 2.1.x.
+This module requires **webtrees** version 2.2.x.
 This module has the same general requirements as named for **Webtrees** overall [webtrees#system-requirements](https://github.com/fisharebest/webtrees#system-requirements).
 
 <a name="installation"></a>
