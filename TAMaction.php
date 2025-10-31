@@ -3,7 +3,7 @@
 /**
  * webtrees - clippings vizualisation - TAM
  *
- * Copyright (C) 2023-2024 huhwt. All rights reserved.
+ * Copyright (C) 2023-2025 huhwt. All rights reserved.
  *
  */
 
@@ -46,9 +46,11 @@ class TAMaction extends AbstractModule
     private const ROUTE_URL = '/TAMaction&actKey={actKey}';
 
     private $huh;
+    private $huh_short;
 
     public function __construct() {
       $this->huh = json_decode('"\u210D"') . "&" . json_decode('"\u210D"') . "wt";
+      $this->huh_short = json_decode('"\u210D"');
     }
 
     /**
@@ -69,7 +71,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.2.1.0';
+        return '2.2.4.0';
     }
 
     /**
@@ -130,7 +132,7 @@ class TAMaction extends AbstractModule
     public function title(): string 
     {
         $title = I18N::translate('TAMchart');
-        return $this->huh . ' ' . $title;
+        return $this->huh_short . ' ' . $title;
     }
 
     /**
