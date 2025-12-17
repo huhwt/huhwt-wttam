@@ -71,7 +71,7 @@ class TAMaction extends AbstractModule
      * @return string
      */
     public function customModuleVersion(): string {
-        return '2.4.1.0';
+        return '2.4.1.1';
     }
 
     /**
@@ -221,8 +221,12 @@ class TAMaction extends AbstractModule
         $TAMpath = str_replace("/public/snip/", "", $TAMpath) . "/modules_v4/huhwt-wttam/_TAMchart_/index.html";
 
         $TAMdname = Session::get('VIZ_DSname');
-        $TAMdname = str_replace("VIZ", "TAM", $TAMdname);
-        $TAMdname = str_replace("DATA", $tree->name(), $TAMdname);
+        if (!empty($TAMdname)) {
+            $TAMdname = str_replace("VIZ", "TAM", $TAMdname);
+            $TAMdname = str_replace("DATA", $tree->name(), $TAMdname);
+        } else {
+            $TAMdname = 'wtTAM-' . $tree->name() . '-ANY';
+        }
         Session::put('TAM_DSname', $TAMdname);
 
         // we don't want to transfer gedcom directly - prepare url for AJAX call
@@ -284,6 +288,6 @@ class TAMaction extends AbstractModule
 
     public function appName(): string
     {
-        return $this->name;
+        return $this->name();
     }
 }
